@@ -1,0 +1,10 @@
+{
+        "variants": {
+                "": [
+                        { "model": "tree_of_yorishiro:block/yorishiro_stone", "y": 0 },
+                        { "model": "tree_of_yorishiro:block/yorishiro_stone", "y": 90 },
+                        { "model": "tree_of_yorishiro:block/yorishiro_stone", "y": 180 },
+                        { "model": "tree_of_yorishiro:block/yorishiro_stone", "y": 270 }
+                ]
+        }
+}

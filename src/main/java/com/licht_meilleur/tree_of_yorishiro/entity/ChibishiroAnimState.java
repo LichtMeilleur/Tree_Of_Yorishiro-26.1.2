@@ -1,0 +1,54 @@
+package com.licht_meilleur.tree_of_yorishiro.entity;
+
+public enum ChibishiroAnimState {
+    IDLE,
+    WALK,
+
+    PLAY1,
+    PLAY2,
+    PLAY3,
+    PLAY4,
+    PLAY5,
+
+    TRAINING1_START,
+    TRAINING1_LOOP,
+    TRAINING2_START,
+    TRAINING2_LOOP,
+    TRAINING3_START,
+    TRAINING3_LOOP,
+
+    MEAL_START,
+    MEAL_LOOP,
+
+    STUDY1_START,
+    STUDY1_LOOP,
+    STUDY2_START,
+    STUDY2_LOOP,
+    STUDY3_START,
+    STUDY3_LOOP,
+
+    SLEEP_START,
+    SLEEP_LOOP,
+
+    GAME1_START,
+    GAME1_LOOP,
+    GAME2_START,
+    GAME2_LOOP,
+    GAME3_START,
+    GAME3_LOOP,
+
+    TREASURE_START,
+
+    // 追加: TASK系
+    MEAL_TASK,
+    STUDY1_TASK,
+    STUDY2_TASK,
+    STUDY3_TASK,
+    TRAINING1_TASK,
+    TRAINING2_TASK,
+    TRAINING3_TASK,
+    GAME1_TASK,
+    GAME2_TASK,
+    GAME3_TASK,
+    SLEEP_TASK
+}

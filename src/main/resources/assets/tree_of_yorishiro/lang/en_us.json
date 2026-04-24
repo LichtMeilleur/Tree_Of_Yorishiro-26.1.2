@@ -1,0 +1,48 @@
+{
+  "screen.tree_of_yorishiro.title": "Tree of Yorishiro",
+  "screen.tree_of_yorishiro.genki": "Energy",
+  "screen.tree_of_yorishiro.kashikosa": "Wisdom",
+  "screen.tree_of_yorishiro.chikara": "Strength",
+  "screen.tree_of_yorishiro.stress": "Stress",
+  "screen.tree_of_yorishiro.meal": "Meal",
+  "screen.tree_of_yorishiro.study": "Study",
+  "screen.tree_of_yorishiro.exercise": "Exercise",
+  "screen.tree_of_yorishiro.play": "Play",
+  "screen.tree_of_yorishiro.adventure_menu": "Adventure Menu",
+  "screen.tree_of_yorishiro.send_adventure": "Send 5 Chibishiro to adventure",
+  "screen.tree_of_yorishiro.tab_white": "W",
+  "screen.tree_of_yorishiro.tab_red": "R",
+  "screen.tree_of_yorishiro.tab_blue": "B",
+  "screen.tree_of_yorishiro.tab_yellow": "Y",
+  "screen.tree_of_yorishiro.tab_purple": "P",
+  "screen.tree_of_yorishiro.tab_adventure": "ADV",
+  "screen.tree_of_yorishiro.back": "Back",
+  "screen.tree_of_yorishiro.food_required": "Required Material",
+  "screen.tree_of_yorishiro.slot_meal": "Food",
+  "item.tree_of_yorishiro.study_book": "study book",
+  "item.tree_of_yorishiro.study_set": "study set",
+  "item.tree_of_yorishiro.hard_study_set": "hard study set",
+
+  "item.tree_of_yorishiro.headband": "headband",
+  "item.tree_of_yorishiro.punching_set": "punching set",
+  "item.tree_of_yorishiro.running_set": "running set",
+
+  "item.tree_of_yorishiro.ball": "ball",
+  "item.tree_of_yorishiro.bubble_set": "bubble set",
+  "item.tree_of_yorishiro.game": "game",
+
+  "item.tree_of_yorishiro.glasses_and_pen": "glasses and pen",
+  "item.tree_of_yorishiro.punching_machine": "Punching Machine",
+  "item.tree_of_yorishiro.running_machine": "Running Machine",
+  "item.tree_of_yorishiro.study_desk": "Study Desk",
+
+  "gui.tree_of_yorishiro.start_adventure": "Start Adventure",
+  "gui.tree_of_yorishiro.adventuring": "Adventuring",
+  "gui.tree_of_yorishiro.adventure_rewards": "Rewards",
+  "gui.tree_of_yorishiro.claim_rewards": "Claim",
+
+  "block.tree_of_yorishiro.debug_tree_of_yorishiro": "Tree of Yorishiro (Debug)",
+  "item.tree_of_yorishiro.debug_tree_of_yorishiro": "Tree of Yorishiro (Debug)",
+
+  "block.tree_of_yorishiro.yorishiro_stone": "Yorishiro Stone"
+}

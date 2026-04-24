@@ -1,0 +1,8 @@
+{
+  "variants": {
+    "facing=north": { "model": "tree_of_yorishiro:block/bud_of_yorishiro", "y": 0 },
+    "facing=east":  { "model": "tree_of_yorishiro:block/bud_of_yorishiro", "y": 90 },
+    "facing=south": { "model": "tree_of_yorishiro:block/bud_of_yorishiro", "y": 180 },
+    "facing=west":  { "model": "tree_of_yorishiro:block/bud_of_yorishiro", "y": 270 }
+  }
+}

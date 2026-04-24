@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "watered=false": {
+      "model": "tree_of_yorishiro:block/bud_of_yorishiro"
+    },
+    "watered=true": {
+      "model": "tree_of_yorishiro:block/bud_of_yorishiro"
+    }
+  }
+}

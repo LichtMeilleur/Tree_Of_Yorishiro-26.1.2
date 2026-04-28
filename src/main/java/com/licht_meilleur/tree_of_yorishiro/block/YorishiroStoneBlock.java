@@ -1,17 +1,21 @@
 package com.licht_meilleur.tree_of_yorishiro.block;
 
-import net.minecraft.block.Block;
-import net.minecraft.block.AbstractBlock;
-import net.minecraft.block.MapColor;
-import net.minecraft.sound.BlockSoundGroup;
+import com.licht_meilleur.tree_of_yorishiro.TreeofYorishiroMod;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.SoundType;
+import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraft.world.level.material.MapColor;
 
 public class YorishiroStoneBlock extends Block {
 
     public YorishiroStoneBlock() {
-        super(AbstractBlock.Settings.create()
-                .mapColor(MapColor.STONE_GRAY)
+        super(BlockBehaviour.Properties.of()
+                .setId(ResourceKey.create(Registries.BLOCK, TreeofYorishiroMod.id("yorishiro_stone")))
+                .mapColor(MapColor.STONE)
                 .strength(0.6f, 0.6f)
-                .sounds(BlockSoundGroup.STONE)
-                .nonOpaque());
+                .sound(SoundType.STONE)
+                .noOcclusion());
     }
 }

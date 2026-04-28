@@ -1,40 +1,45 @@
 package com.licht_meilleur.tree_of_yorishiro.entity;
 
-import net.minecraft.entity.EntityType;
-import net.minecraft.entity.ai.goal.LookAroundGoal;
-import net.minecraft.entity.ai.goal.WanderAroundFarGoal;
-import net.minecraft.entity.attribute.DefaultAttributeContainer;
-import net.minecraft.entity.attribute.EntityAttributes;
-import net.minecraft.entity.data.DataTracker;
-import net.minecraft.entity.data.TrackedData;
-import net.minecraft.entity.data.TrackedDataHandlerRegistry;
-import net.minecraft.entity.mob.PathAwareEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.particle.ParticleTypes;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.random.Random;
-import net.minecraft.world.World;
-import software.bernie.geckolib.animatable.GeoEntity;
-import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
-import software.bernie.geckolib.core.animation.*;
-import software.bernie.geckolib.core.object.PlayState;
-import software.bernie.geckolib.util.GeckoLibUtil;
+import com.geckolib.animatable.GeoEntity;
+import com.geckolib.animatable.instance.AnimatableInstanceCache;
+import com.geckolib.animatable.manager.AnimatableManager;
+import com.geckolib.animation.AnimationController;
+import com.geckolib.animation.RawAnimation;
+import com.geckolib.animation.object.PlayState;
+import com.geckolib.util.GeckoLibUtil;
 import com.licht_meilleur.tree_of_yorishiro.entity.ai.ChibishiroAssignedTaskGoal;
+import net.minecraft.core.BlockPos;
+import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.network.syncher.EntityDataSerializers;
+import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.PathfinderMob;
+import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
+import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
+import net.minecraft.world.entity.ai.goal.RandomStrollGoal;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.Vec3;
 
 import java.util.UUID;
 
-public class ChibishiroEntity extends PathAwareEntity implements GeoEntity {
+public class ChibishiroEntity extends PathfinderMob implements GeoEntity {
 
-    private static final TrackedData<Integer> COLOR =
-            DataTracker.registerData(ChibishiroEntity.class, TrackedDataHandlerRegistry.INTEGER);
+    private static final EntityDataAccessor<Integer> COLOR =
+            SynchedEntityData.defineId(ChibishiroEntity.class, EntityDataSerializers.INT);
 
-    private static final TrackedData<Integer> ANIM_STATE =
-            DataTracker.registerData(ChibishiroEntity.class, TrackedDataHandlerRegistry.INTEGER);
+    private static final EntityDataAccessor<Integer> ANIM_STATE =
+            SynchedEntityData.defineId(ChibishiroEntity.class, EntityDataSerializers.INT);
 
-    private static final TrackedData<Integer> ANIM_TICKS =
-            DataTracker.registerData(ChibishiroEntity.class, TrackedDataHandlerRegistry.INTEGER);
+    private static final EntityDataAccessor<Integer> ANIM_TICKS =
+            SynchedEntityData.defineId(ChibishiroEntity.class, EntityDataSerializers.INT);
+
+    private static final EntityDataAccessor<ItemStack> DISPLAY_FOOD =
+            SynchedEntityData.defineId(ChibishiroEntity.class, EntityDataSerializers.ITEM_STACK);
 
     public static final String ANIM_IDLE = "animation.model.idle";
     public static final String ANIM_WALK = "animation.model.walk";
@@ -76,168 +81,148 @@ public class ChibishiroEntity extends PathAwareEntity implements GeoEntity {
 
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
 
-    private net.minecraft.util.math.BlockPos homeTreePos;
-    private java.util.UUID homeTreeUuid;
+    private BlockPos homeTreePos;
+    private UUID homeTreeUuid;
 
-    public ChibishiroEntity(EntityType<? extends PathAwareEntity> type, World world) {
-        super(type, world);
+    public ChibishiroEntity(EntityType<? extends PathfinderMob> type, Level level) {
+        super(type, level);
     }
 
     @Override
-    protected void initDataTracker() {
-        super.initDataTracker();
-        this.dataTracker.startTracking(COLOR, 0);
-        this.dataTracker.startTracking(ANIM_STATE, ChibishiroAnimState.IDLE.ordinal());
-        this.dataTracker.startTracking(ANIM_TICKS, 0);
-
-        this.dataTracker.startTracking(DISPLAY_FOOD, ItemStack.EMPTY);
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(COLOR, 0);
+        builder.define(ANIM_STATE, ChibishiroAnimState.IDLE.ordinal());
+        builder.define(ANIM_TICKS, 0);
+        builder.define(DISPLAY_FOOD, ItemStack.EMPTY);
     }
 
+    @Override
+    protected void registerGoals() {
+        this.goalSelector.addGoal(0, new ChibishiroAssignedTaskGoal(this));
+        this.goalSelector.addGoal(1, new RandomStrollGoal(this, 0.8D));
+        this.goalSelector.addGoal(2, new RandomLookAroundGoal(this));
+    }
 
+    public static AttributeSupplier.Builder createAttributes() {
+        return PathfinderMob.createMobAttributes()
+                .add(Attributes.MAX_HEALTH, 10.0D)
+                .add(Attributes.MOVEMENT_SPEED, 0.20D);
+    }
 
     public void setColor(ChibishiroColor color) {
-        this.dataTracker.set(COLOR, color.ordinal());
+        this.entityData.set(COLOR, color.ordinal());
     }
 
-
     public ChibishiroColor getColor() {
-        return ChibishiroColor.byIndex(this.dataTracker.get(COLOR));
+        return ChibishiroColor.byIndex(this.entityData.get(COLOR));
     }
 
     public ChibishiroAnimState getAnimState() {
-        return ChibishiroAnimState.values()[this.dataTracker.get(ANIM_STATE)];
+        int index = this.entityData.get(ANIM_STATE);
+        ChibishiroAnimState[] values = ChibishiroAnimState.values();
+
+        if (index < 0 || index >= values.length) {
+            return ChibishiroAnimState.IDLE;
+        }
+
+        return values[index];
     }
 
     public void setAnimState(ChibishiroAnimState state) {
-        this.dataTracker.set(ANIM_STATE, state.ordinal());
+        this.entityData.set(ANIM_STATE, state.ordinal());
     }
 
     public int getAnimTicks() {
-        return this.dataTracker.get(ANIM_TICKS);
+        return this.entityData.get(ANIM_TICKS);
     }
 
     public void setAnimTicks(int ticks) {
-        this.dataTracker.set(ANIM_TICKS, ticks);
-    }
-
-    @Override
-    protected void initGoals() {
-        this.goalSelector.add(0, new ChibishiroAssignedTaskGoal(this));
-
-        // 通常時の待機/うろうろ
-        this.goalSelector.add(1, new WanderAroundFarGoal(this, 0.8D));
-        this.goalSelector.add(2, new LookAroundGoal(this));
-    }
-
-    public static DefaultAttributeContainer.Builder createAttributes() {
-        return PathAwareEntity.createMobAttributes()
-                .add(EntityAttributes.GENERIC_MAX_HEALTH, 10.0)
-                .add(EntityAttributes.GENERIC_MOVEMENT_SPEED, 0.20);
+        this.entityData.set(ANIM_TICKS, ticks);
     }
 
     @Override
     public void tick() {
         super.tick();
 
-        if (!this.getWorld().isClient && homeTreePos != null) {
-            double maxDistance = 8.0;
-            net.minecraft.util.math.Vec3d center = net.minecraft.util.math.Vec3d.ofCenter(homeTreePos);
+        if (!this.level().isClientSide() && homeTreePos != null) {
+            double maxDistance = 8.0D;
+            Vec3 center = Vec3.atCenterOf(homeTreePos);
 
-            if (this.getPos().squaredDistanceTo(center) > maxDistance * maxDistance) {
-                this.getNavigation().startMovingTo(center.x, center.y, center.z, 1.0);
+            if (this.position().distanceToSqr(center) > maxDistance * maxDistance) {
+                this.getNavigation().moveTo(center.x, center.y, center.z, 1.0D);
             }
-            if (this.getPos().squaredDistanceTo(center) > 20.0 * 20.0) {
-                this.refreshPositionAndAngles(center.x, center.y, center.z, this.getYaw(), this.getPitch());
+
+            if (this.position().distanceToSqr(center) > 20.0D * 20.0D) {
+                float yaw = this.getYRot();
+                float pitch = this.getXRot();
+
+                this.setPos(center.x, center.y, center.z);
+                this.setYRot(yaw);
+                this.setXRot(pitch);
             }
         }
 
-
         int ticks = getAnimTicks();
+
         if (ticks > 0) {
             setAnimTicks(ticks - 1);
 
             if (ticks - 1 <= 0) {
                 ChibishiroAnimState state = getAnimState();
+
                 switch (state) {
-                    case TRAINING1_START -> {
-                        setAnimState(ChibishiroAnimState.TRAINING1_LOOP);
-                        return;
-                    }
-                    case TRAINING2_START -> {
-                        setAnimState(ChibishiroAnimState.TRAINING2_LOOP);
-                        return;
-                    }
-                    case TRAINING3_START -> {
-                        setAnimState(ChibishiroAnimState.TRAINING3_LOOP);
-                        return;
-                    }
+                    case TRAINING1_START -> setAnimState(ChibishiroAnimState.TRAINING1_LOOP);
+                    case TRAINING2_START -> setAnimState(ChibishiroAnimState.TRAINING2_LOOP);
+                    case TRAINING3_START -> setAnimState(ChibishiroAnimState.TRAINING3_LOOP);
 
-                    case STUDY1_START -> {
-                        setAnimState(ChibishiroAnimState.STUDY1_LOOP);
-                        return;
-                    }
-                    case STUDY2_START -> {
-                        setAnimState(ChibishiroAnimState.STUDY2_LOOP);
-                        return;
-                    }
-                    case STUDY3_START -> {
-                        setAnimState(ChibishiroAnimState.STUDY3_LOOP);
-                        return;
-                    }
+                    case STUDY1_START -> setAnimState(ChibishiroAnimState.STUDY1_LOOP);
+                    case STUDY2_START -> setAnimState(ChibishiroAnimState.STUDY2_LOOP);
+                    case STUDY3_START -> setAnimState(ChibishiroAnimState.STUDY3_LOOP);
 
-                    case MEAL_START -> {
-                        setAnimState(ChibishiroAnimState.MEAL_LOOP);
-                        return;
-                    }
-                    case SLEEP_START -> {
-                        setAnimState(ChibishiroAnimState.SLEEP_LOOP);
-                        return;
-                    }
+                    case MEAL_START -> setAnimState(ChibishiroAnimState.MEAL_LOOP);
+                    case SLEEP_START -> setAnimState(ChibishiroAnimState.SLEEP_LOOP);
 
-                    case GAME1_START -> {
-                        setAnimState(ChibishiroAnimState.GAME1_LOOP);
-                        return;
-                    }
-                    case GAME2_START -> {
-                        setAnimState(ChibishiroAnimState.GAME2_LOOP);
-                        return;
-                    }
-                    case GAME3_START -> {
-                        setAnimState(ChibishiroAnimState.GAME3_LOOP);
-                        return;
-                    }
+                    case GAME1_START -> setAnimState(ChibishiroAnimState.GAME1_LOOP);
+                    case GAME2_START -> setAnimState(ChibishiroAnimState.GAME2_LOOP);
+                    case GAME3_START -> setAnimState(ChibishiroAnimState.GAME3_LOOP);
 
-                    case PLAY1, PLAY2, PLAY3, PLAY4, PLAY5 -> {
-                        setAnimState(ChibishiroAnimState.IDLE);
-                        return;
-                    }
+                    case PLAY1, PLAY2, PLAY3, PLAY4, PLAY5 -> setAnimState(ChibishiroAnimState.IDLE);
 
                     case TREASURE_START -> {
-                        if (!this.getWorld().isClient && this.getWorld() instanceof ServerWorld sw) {
-                            sw.spawnParticles(
+                        if (!this.level().isClientSide() && this.level() instanceof ServerLevel serverLevel) {
+                            serverLevel.sendParticles(
                                     ParticleTypes.CLOUD,
-                                    this.getX(), this.getBodyY(0.5), this.getZ(),
-                                    12, 0.2, 0.2, 0.2, 0.02
+                                    this.getX(),
+                                    this.getY() + this.getBbHeight() * 0.5D,
+                                    this.getZ(),
+                                    12,
+                                    0.2D,
+                                    0.2D,
+                                    0.2D,
+                                    0.02D
                             );
                         }
 
-                        this.discard(); // ←ここで消える
-                        return;
+                        this.remove(Entity.RemovalReason.DISCARDED);
+                    }
+
+                    default -> {
                     }
                 }
+
+                return;
             }
         }
 
         if (getAnimTicks() <= 0 && !isInAssignedTaskAnimation()) {
-
-            boolean moving = this.getVelocity().horizontalLengthSquared() > 0.0025;
+            boolean moving = this.getDeltaMovement().horizontalDistanceSqr() > 0.0025D;
 
             if (moving) {
                 setAnimState(ChibishiroAnimState.WALK);
             } else {
-                if (this.age % 100 == 0) {
-                    Random random = this.getRandom();
-                    int r = random.nextInt(8);
+                if (this.tickCount % 100 == 0) {
+                    int r = this.getRandom().nextInt(8);
 
                     switch (r) {
                         case 0 -> {
@@ -285,7 +270,6 @@ public class ChibishiroEntity extends PathAwareEntity implements GeoEntity {
     }
 
     public void startStudy1() {
-
         setAnimState(ChibishiroAnimState.STUDY1_START);
         setAnimTicks(24);
     }
@@ -299,8 +283,6 @@ public class ChibishiroEntity extends PathAwareEntity implements GeoEntity {
         setAnimState(ChibishiroAnimState.STUDY3_START);
         setAnimTicks(30);
     }
-
-
 
     public void startMeal() {
         setAnimState(ChibishiroAnimState.MEAL_START);
@@ -387,52 +369,64 @@ public class ChibishiroEntity extends PathAwareEntity implements GeoEntity {
         setAnimTicks(0);
     }
 
-    @Override
-    public void writeCustomDataToNbt(NbtCompound nbt) {
-        nbt.putInt("Color", this.dataTracker.get(COLOR));
-        nbt.putInt("AnimState", this.dataTracker.get(ANIM_STATE));
-        nbt.putInt("AnimTicks", this.dataTracker.get(ANIM_TICKS));
+    public void startTreasureAndVanish() {
+        setAnimState(ChibishiroAnimState.TREASURE_START);
+        setAnimTicks(58);
+    }
 
-        if (homeTreePos != null) {
-            nbt.putInt("HomeTreeX", homeTreePos.getX());
-            nbt.putInt("HomeTreeY", homeTreePos.getY());
-            nbt.putInt("HomeTreeZ", homeTreePos.getZ());
-        }
-        if (homeTreeUuid != null) {
-            nbt.putUuid("HomeTreeUuid", homeTreeUuid);
-        }
-        if (!getDisplayFoodStack().isEmpty()) {
-            nbt.put("DisplayFood", getDisplayFoodStack().writeNbt(new NbtCompound()));
+    public ItemStack getDisplayFoodStack() {
+        return this.entityData.get(DISPLAY_FOOD);
+    }
+
+    public void setDisplayFoodStack(ItemStack stack) {
+        ItemStack copy = stack == null ? ItemStack.EMPTY : stack.copy();
+
+        if (!copy.isEmpty()) {
+            copy.setCount(1);
         }
 
+        this.entityData.set(DISPLAY_FOOD, copy);
+    }
+
+    public void setHomeTreePos(BlockPos pos) {
+        this.homeTreePos = pos;
+    }
+
+    public BlockPos getHomeTreePos() {
+        return homeTreePos;
+    }
+
+    public void setHomeTreeUuid(UUID uuid) {
+        this.homeTreeUuid = uuid;
+    }
+
+    public UUID getHomeTreeUuid() {
+        return homeTreeUuid;
     }
 
     @Override
-    public void readCustomDataFromNbt(NbtCompound nbt) {
-        this.dataTracker.set(COLOR, nbt.getInt("Color"));
-        this.dataTracker.set(ANIM_STATE, nbt.getInt("AnimState"));
-        this.dataTracker.set(ANIM_TICKS, nbt.getInt("AnimTicks"));
-
-        if (nbt.contains("HomeTreeX") && nbt.contains("HomeTreeY") && nbt.contains("HomeTreeZ")) {
-            this.homeTreePos = new BlockPos(
-                    nbt.getInt("HomeTreeX"),
-                    nbt.getInt("HomeTreeY"),
-                    nbt.getInt("HomeTreeZ")
-            );
-        }
-        if (nbt.containsUuid("HomeTreeUuid")) {
-            this.homeTreeUuid = nbt.getUuid("HomeTreeUuid");
-        }
-        if (nbt.contains("DisplayFood")) {
-            setDisplayFoodStack(ItemStack.fromNbt(nbt.getCompound("DisplayFood")));
-        } else {
-            setDisplayFoodStack(ItemStack.EMPTY);
-        }
+    public boolean removeWhenFarAway(double distanceToClosestPlayer) {
+        return false;
     }
 
-    @Override
-    public AnimatableInstanceCache getAnimatableInstanceCache() {
-        return cache;
+    public boolean isInAssignedTaskAnimation() {
+        ChibishiroAnimState state = getAnimState();
+
+        return switch (state) {
+            case MEAL_START, MEAL_LOOP, MEAL_TASK,
+                 STUDY1_START, STUDY1_LOOP, STUDY1_TASK,
+                 STUDY2_START, STUDY2_LOOP, STUDY2_TASK,
+                 STUDY3_START, STUDY3_LOOP, STUDY3_TASK,
+                 TRAINING1_START, TRAINING1_LOOP, TRAINING1_TASK,
+                 TRAINING2_START, TRAINING2_LOOP, TRAINING2_TASK,
+                 TRAINING3_START, TRAINING3_LOOP, TRAINING3_TASK,
+                 GAME1_START, GAME1_LOOP, GAME1_TASK,
+                 GAME2_START, GAME2_LOOP, GAME2_TASK,
+                 GAME3_START, GAME3_LOOP, GAME3_TASK,
+                 SLEEP_TASK -> true;
+
+            default -> false;
+        };
     }
 
     private RawAnimation getAnimationForState(ChibishiroAnimState state) {
@@ -463,7 +457,7 @@ public class ChibishiroEntity extends PathAwareEntity implements GeoEntity {
             case STUDY3_LOOP -> RawAnimation.begin().thenLoop(ANIM_STUDY3);
 
             case SLEEP_START -> RawAnimation.begin().thenPlay(ANIM_SLEEP_START);
-            case SLEEP_LOOP -> RawAnimation.begin().thenLoop(ANIM_SLEEP);
+            case SLEEP_LOOP, SLEEP_TASK -> RawAnimation.begin().thenLoop(ANIM_SLEEP);
 
             case GAME1_START -> RawAnimation.begin().thenPlay(ANIM_GAME1START);
             case GAME1_LOOP -> RawAnimation.begin().thenLoop(ANIM_GAME1);
@@ -474,43 +468,19 @@ public class ChibishiroEntity extends PathAwareEntity implements GeoEntity {
 
             case TREASURE_START -> RawAnimation.begin().thenPlay(ANIM_TREASURE_START);
 
-            // TASK系: start → loop を1本で渡す
-            case MEAL_TASK -> RawAnimation.begin()
-                    .thenPlay(ANIM_MEAL_START)
-                    .thenLoop(ANIM_MEALING);
+            case MEAL_TASK -> RawAnimation.begin().thenPlay(ANIM_MEAL_START).thenLoop(ANIM_MEALING);
 
-            case STUDY1_TASK -> RawAnimation.begin()
-                    .thenPlay(ANIM_STUDY1START)
-                    .thenLoop(ANIM_STUDY1);
-            case STUDY2_TASK -> RawAnimation.begin()
-                    .thenPlay(ANIM_STUDY2START)
-                    .thenLoop(ANIM_STUDY2);
-            case STUDY3_TASK -> RawAnimation.begin()
-                    .thenPlay(ANIM_STUDY3START)
-                    .thenLoop(ANIM_STUDY3);
+            case STUDY1_TASK -> RawAnimation.begin().thenPlay(ANIM_STUDY1START).thenLoop(ANIM_STUDY1);
+            case STUDY2_TASK -> RawAnimation.begin().thenPlay(ANIM_STUDY2START).thenLoop(ANIM_STUDY2);
+            case STUDY3_TASK -> RawAnimation.begin().thenPlay(ANIM_STUDY3START).thenLoop(ANIM_STUDY3);
 
-            case TRAINING1_TASK -> RawAnimation.begin()
-                    .thenPlay(ANIM_TRAINING1START)
-                    .thenLoop(ANIM_TRAINING1);
-            case TRAINING2_TASK -> RawAnimation.begin()
-                    .thenPlay(ANIM_TRAINING2START)
-                    .thenLoop(ANIM_TRAINING2);
-            case TRAINING3_TASK -> RawAnimation.begin()
-                    .thenPlay(ANIM_TRAINING3START)
-                    .thenLoop(ANIM_TRAINING3);
+            case TRAINING1_TASK -> RawAnimation.begin().thenPlay(ANIM_TRAINING1START).thenLoop(ANIM_TRAINING1);
+            case TRAINING2_TASK -> RawAnimation.begin().thenPlay(ANIM_TRAINING2START).thenLoop(ANIM_TRAINING2);
+            case TRAINING3_TASK -> RawAnimation.begin().thenPlay(ANIM_TRAINING3START).thenLoop(ANIM_TRAINING3);
 
-            case GAME1_TASK -> RawAnimation.begin()
-                    .thenPlay(ANIM_GAME1START)
-                    .thenLoop(ANIM_GAME1);
-            case GAME2_TASK -> RawAnimation.begin()
-                    .thenPlay(ANIM_GAME2START)
-                    .thenLoop(ANIM_GAME2);
-            case GAME3_TASK -> RawAnimation.begin()
-                    .thenPlay(ANIM_GAME3START)
-                    .thenLoop(ANIM_GAME3);
-            case SLEEP_TASK -> RawAnimation.begin()
-                    .thenPlay(ANIM_SLEEP_START)
-                    .thenLoop(ANIM_SLEEP);
+            case GAME1_TASK -> RawAnimation.begin().thenPlay(ANIM_GAME1START).thenLoop(ANIM_GAME1);
+            case GAME2_TASK -> RawAnimation.begin().thenPlay(ANIM_GAME2START).thenLoop(ANIM_GAME2);
+            case GAME3_TASK -> RawAnimation.begin().thenPlay(ANIM_GAME3START).thenLoop(ANIM_GAME3);
 
             default -> RawAnimation.begin().thenLoop(ANIM_IDLE);
         };
@@ -518,82 +488,18 @@ public class ChibishiroEntity extends PathAwareEntity implements GeoEntity {
 
     @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-        controllers.add(new AnimationController<>(this, "controller", 0, state -> {
-            ChibishiroAnimState animState = getAnimState();
-            state.setAndContinue(getAnimationForState(animState));
-            return PlayState.CONTINUE;
-        }));
+        controllers.add(new AnimationController<>(
+                "controller",
+                0,
+                state -> {
+                    state.setAnimation(getAnimationForState(getAnimState()));
+                    return PlayState.CONTINUE;
+                }
+        ));
     }
 
-    public void setHomeTreePos(net.minecraft.util.math.BlockPos pos) {
-        this.homeTreePos = pos;
-    }
-
-    public net.minecraft.util.math.BlockPos getHomeTreePos() {
-        return homeTreePos;
-    }
-
-    public void setHomeTreeUuid(java.util.UUID uuid) {
-        this.homeTreeUuid = uuid;
-    }
-
-    public java.util.UUID getHomeTreeUuid() {
-        return homeTreeUuid;
-    }
     @Override
-    public boolean damage(net.minecraft.entity.damage.DamageSource source, float amount) {
-        return false;
+    public AnimatableInstanceCache getAnimatableInstanceCache() {
+        return cache;
     }
-    @Override
-    public boolean cannotDespawn() {
-        return true;
-    }
-    public boolean isInAssignedTaskAnimation() {
-        ChibishiroAnimState state = getAnimState();
-
-        return switch (state) {
-            case MEAL_START, MEAL_LOOP, MEAL_TASK,
-
-                 STUDY1_START, STUDY1_LOOP, STUDY1_TASK,
-                 STUDY2_START, STUDY2_LOOP, STUDY2_TASK,
-                 STUDY3_START, STUDY3_LOOP, STUDY3_TASK,
-
-                 TRAINING1_START, TRAINING1_LOOP, TRAINING1_TASK,
-                 TRAINING2_START, TRAINING2_LOOP, TRAINING2_TASK,
-                 TRAINING3_START, TRAINING3_LOOP, TRAINING3_TASK,
-
-                 GAME1_START, GAME1_LOOP, GAME1_TASK,
-                 GAME2_START, GAME2_LOOP, GAME2_TASK,
-                 GAME3_START, GAME3_LOOP, GAME3_TASK,
-                 SLEEP_TASK-> true;
-
-            default -> false;
-        };
-    }
-    //食事アイテム描画
-
-
-    public ItemStack getDisplayFoodStack() {
-        return this.dataTracker.get(DISPLAY_FOOD);
-    }
-
-    public void setDisplayFoodStack(ItemStack stack) {
-        ItemStack copy = stack == null ? ItemStack.EMPTY : stack.copy();
-        if (!copy.isEmpty()) {
-            copy.setCount(1);
-        }
-        this.dataTracker.set(DISPLAY_FOOD, copy);
-    }
-    private static final TrackedData<ItemStack> DISPLAY_FOOD =
-            DataTracker.registerData(ChibishiroEntity.class, TrackedDataHandlerRegistry.ITEM_STACK);
-
-
-    public void startTreasureAndVanish() {
-        setAnimState(ChibishiroAnimState.TREASURE_START);
-        setAnimTicks(58); // あとで調整
-    }
-
-
-
-
 }

@@ -3,44 +3,52 @@ package com.licht_meilleur.tree_of_yorishiro.screen;
 import com.licht_meilleur.tree_of_yorishiro.block.entity.SyokuninDeskBlockEntity;
 import com.licht_meilleur.tree_of_yorishiro.recipe.YorisyokuninRecipeDef;
 import com.licht_meilleur.tree_of_yorishiro.recipe.YorisyokuninRecipeRegistry;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.entity.player.PlayerInventory;
-import net.minecraft.inventory.Inventory;
-import net.minecraft.item.ItemStack;
-import net.minecraft.network.PacketByteBuf;
-import net.minecraft.screen.ArrayPropertyDelegate;
-import net.minecraft.screen.PropertyDelegate;
-import net.minecraft.screen.ScreenHandler;
-import net.minecraft.screen.slot.Slot;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.Container;
+import net.minecraft.world.SimpleContainer;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.DataSlot;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.inventory.Slot;
 
 import java.util.List;
 
-public class YorisyokuninTradeScreenHandler extends ScreenHandler {
+public class YorisyokuninTradeScreenHandler extends AbstractContainerMenu {
 
     private static final int CRAFT_BUTTON_ID = 999;
 
     private final SyokuninDeskBlockEntity be;
-    private final Inventory inventory;
-    private final PropertyDelegate propertyDelegate;
+    private final Container inventory;
+    private final BlockPos pos;
 
-    public YorisyokuninTradeScreenHandler(int syncId, PlayerInventory playerInventory, SyokuninDeskBlockEntity be) {
+    private int selectedRecipe = 0;
+
+    public YorisyokuninTradeScreenHandler(int syncId, Inventory playerInventory, SyokuninDeskBlockEntity be, BlockPos pos) {
         super(ModScreenHandlers.YORISYOKUNIN_TRADE, syncId);
-        this.be = be;
-        this.inventory = be.getInventory();
 
-        // 0 = selectedRecipe
-        this.propertyDelegate = new ArrayPropertyDelegate(1);
-        this.addProperties(this.propertyDelegate);
+        this.be = be;
+        this.pos = pos;
+        this.inventory = be != null ? be.getInventory() : new SimpleContainer(3);
+
+        this.addDataSlot(new DataSlot() {
+            @Override
+            public int get() {
+                return selectedRecipe;
+            }
+
+            @Override
+            public void set(int value) {
+                selectedRecipe = value;
+            }
+        });
 
         addSlots(playerInventory);
     }
 
-    public YorisyokuninTradeScreenHandler(int syncId, PlayerInventory playerInventory, PacketByteBuf buf) {
-        this(syncId, playerInventory,
-                (SyokuninDeskBlockEntity) playerInventory.player.getWorld().getBlockEntity(buf.readBlockPos()));
-    }
-
-    private void addSlots(PlayerInventory playerInventory) {
+    private void addSlots(Inventory playerInventory) {
         this.addSlot(new Slot(inventory, 0, 132, 34));
         this.addSlot(new Slot(inventory, 1, 152, 34));
         this.addSlot(new Slot(inventory, 2, 172, 34));
@@ -73,12 +81,12 @@ public class YorisyokuninTradeScreenHandler extends ScreenHandler {
     }
 
     public int getSelectedRecipe() {
-        return propertyDelegate.get(0);
+        return selectedRecipe;
     }
 
     public void setSelectedRecipe(int selectedRecipe) {
         int max = Math.max(0, getRecipeCount() - 1);
-        propertyDelegate.set(0, Math.max(0, Math.min(selectedRecipe, max)));
+        this.selectedRecipe = Math.max(0, Math.min(selectedRecipe, max));
     }
 
     public YorisyokuninRecipeDef getSelectedRecipeDef() {
@@ -95,19 +103,23 @@ public class YorisyokuninTradeScreenHandler extends ScreenHandler {
     }
 
     public boolean canCraftSelectedRecipe() {
+        if (be == null) return false;
+
         YorisyokuninRecipeDef recipe = getSelectedRecipeDef();
         if (recipe == null) return false;
 
         List<ItemStack> inputs = List.of(
-                be.getInventory().getStack(0),
-                be.getInventory().getStack(1),
-                be.getInventory().getStack(2)
+                inventory.getItem(0),
+                inventory.getItem(1),
+                inventory.getItem(2)
         );
 
         return recipe.matches(inputs);
     }
 
     public boolean startWork() {
+        if (be == null) return false;
+
         YorisyokuninRecipeDef recipe = getSelectedRecipeDef();
         if (recipe == null) return false;
         if (!canCraftSelectedRecipe()) return false;
@@ -118,26 +130,26 @@ public class YorisyokuninTradeScreenHandler extends ScreenHandler {
     }
 
     @Override
-    public boolean onButtonClick(PlayerEntity player, int id) {
+    public boolean clickMenuButton(Player player, int id) {
         if (id == CRAFT_BUTTON_ID) {
             return startWork();
         }
 
         if (id >= 0 && id < getRecipeCount()) {
             setSelectedRecipe(id);
-            sendContentUpdates();
+            broadcastChanges();
             return true;
         }
 
-        return super.onButtonClick(player, id);
+        return super.clickMenuButton(player, id);
     }
 
     public boolean isWorking() {
-        return be.isWorking();
+        return be != null && be.isWorking();
     }
 
     public int getWorkTicks() {
-        return be.getWorkTicks();
+        return be != null ? be.getWorkTicks() : 0;
     }
 
     public SyokuninDeskBlockEntity getBlockEntity() {
@@ -145,16 +157,18 @@ public class YorisyokuninTradeScreenHandler extends ScreenHandler {
     }
 
     @Override
-    public boolean canUse(PlayerEntity player) {
-        return be != null && player.squaredDistanceTo(
-                be.getPos().getX() + 0.5,
-                be.getPos().getY() + 0.5,
-                be.getPos().getZ() + 0.5
+    public boolean stillValid(Player player) {
+        if (be == null) return false;
+
+        return player.distanceToSqr(
+                pos.getX() + 0.5,
+                pos.getY() + 0.5,
+                pos.getZ() + 0.5
         ) <= 64.0;
     }
 
     @Override
-    public ItemStack quickMove(PlayerEntity player, int slot) {
+    public ItemStack quickMoveStack(Player player, int slot) {
         return ItemStack.EMPTY;
     }
 }

@@ -2,38 +2,42 @@ package com.licht_meilleur.tree_of_yorishiro.block.entity;
 
 import com.licht_meilleur.tree_of_yorishiro.entity.ChibishiroAnimState;
 import com.licht_meilleur.tree_of_yorishiro.entity.ChibishiroColor;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.item.ItemStack;
+
+import java.util.UUID;
 
 public class TreeChibishiroData {
+
+    public static final int DATA_VERSION = 1;
 
     private ChibishiroColor color;
     private int genki;
     private int kashikosa;
     private int chikara;
     private int stress;
+
     private boolean training;
     private boolean adventuring;
     private ChibishiroAnimState animState;
-    private java.util.UUID entityUuid;
+    private UUID entityUuid;
 
-    // 追加
     private String trainingType;
     private int trainingLevel;
     private long trainingEndTick;
     private boolean trainingCompleted;
-
-    private ItemStack displayItem = ItemStack.EMPTY;
+    private long trainingLastRewardTick;
 
     private long adventureEndTick;
 
-    private long trainingLastRewardTick;
     private boolean sleeping;
     private long sleepingSinceTick;
 
+    // 今は未保存。後でItemStack保存が必要なら registryAccess を持つ親BE側で保存する
+    private ItemStack displayItem = ItemStack.EMPTY;
 
     public TreeChibishiroData(ChibishiroColor color) {
-        this.color = color;
+        this.color = color != null ? color : ChibishiroColor.WHITE;
         this.genki = 100;
         this.kashikosa = 0;
         this.chikara = 0;
@@ -41,12 +45,14 @@ public class TreeChibishiroData {
         this.training = false;
         this.adventuring = false;
         this.animState = ChibishiroAnimState.IDLE;
-
-        // 追加
         this.trainingType = "";
         this.trainingLevel = 0;
         this.trainingEndTick = 0L;
         this.trainingCompleted = false;
+        this.trainingLastRewardTick = 0L;
+        this.adventureEndTick = 0L;
+        this.sleeping = false;
+        this.sleepingSinceTick = 0L;
     }
 
     public ChibishiroColor getColor() {
@@ -81,7 +87,7 @@ public class TreeChibishiroData {
         return animState;
     }
 
-    public java.util.UUID getEntityUuid() {
+    public UUID getEntityUuid() {
         return entityUuid;
     }
 
@@ -99,6 +105,26 @@ public class TreeChibishiroData {
 
     public boolean isTrainingCompleted() {
         return trainingCompleted;
+    }
+
+    public long getTrainingLastRewardTick() {
+        return trainingLastRewardTick;
+    }
+
+    public long getAdventureEndTick() {
+        return adventureEndTick;
+    }
+
+    public boolean isSleeping() {
+        return sleeping;
+    }
+
+    public long getSleepingSinceTick() {
+        return sleepingSinceTick;
+    }
+
+    public ItemStack getDisplayItem() {
+        return displayItem;
     }
 
     public void setGenki(int genki) {
@@ -126,15 +152,15 @@ public class TreeChibishiroData {
     }
 
     public void setAnimState(ChibishiroAnimState animState) {
-        this.animState = animState;
+        this.animState = animState != null ? animState : ChibishiroAnimState.IDLE;
     }
 
-    public void setEntityUuid(java.util.UUID entityUuid) {
+    public void setEntityUuid(UUID entityUuid) {
         this.entityUuid = entityUuid;
     }
 
     public void setTrainingType(String trainingType) {
-        this.trainingType = trainingType;
+        this.trainingType = trainingType != null ? trainingType : "";
     }
 
     public void setTrainingLevel(int trainingLevel) {
@@ -148,43 +174,61 @@ public class TreeChibishiroData {
     public void setTrainingCompleted(boolean trainingCompleted) {
         this.trainingCompleted = trainingCompleted;
     }
-    public long getTrainingLastRewardTick() { return trainingLastRewardTick; }
-    public void setTrainingLastRewardTick(long tick) { this.trainingLastRewardTick = tick; }
 
-    public boolean isSleeping() { return sleeping; }
-    public void setSleeping(boolean sleeping) { this.sleeping = sleeping; }
-
-    public long getSleepingSinceTick() { return sleepingSinceTick; }
-    public void setSleepingSinceTick(long tick) { this.sleepingSinceTick = tick; }
-
-    public void writeNbt(NbtCompound nbt) {
-        nbt.putString("Color", color.getId());
-        nbt.putInt("Genki", genki);
-        nbt.putInt("Kashikosa", kashikosa);
-        nbt.putInt("Chikara", chikara);
-        nbt.putInt("Stress", stress);
-        nbt.putBoolean("Training", training);
-        nbt.putBoolean("Adventuring", adventuring);
-        nbt.putString("AnimState", animState.name());
-
-        if (entityUuid != null) {
-            nbt.putUuid("EntityUuid", entityUuid);
-        }
-
-        // 追加
-        nbt.putString("TrainingType", trainingType);
-        nbt.putInt("TrainingLevel", trainingLevel);
-        nbt.putLong("TrainingEndTick", trainingEndTick);
-        nbt.putBoolean("TrainingCompleted", trainingCompleted);
-
-        nbt.putLong("AdventureEndTick", adventureEndTick);
-        nbt.putLong("trainingLastRewardTick", trainingLastRewardTick);
-        nbt.putBoolean("Sleeping", sleeping);
-        nbt.putLong("SleepingSinceTick", sleepingSinceTick);
+    public void setTrainingLastRewardTick(long tick) {
+        this.trainingLastRewardTick = tick;
     }
 
-    public static TreeChibishiroData fromNbt(NbtCompound nbt) {
-        ChibishiroColor color = switch (nbt.getString("Color")) {
+    public void setAdventureEndTick(long adventureEndTick) {
+        this.adventureEndTick = adventureEndTick;
+    }
+
+    public void setSleeping(boolean sleeping) {
+        this.sleeping = sleeping;
+    }
+
+    public void setSleepingSinceTick(long tick) {
+        this.sleepingSinceTick = tick;
+    }
+
+    public void setDisplayItem(ItemStack displayItem) {
+        this.displayItem = displayItem == null ? ItemStack.EMPTY : displayItem.copy();
+    }
+
+    public void save(CompoundTag tag) {
+        tag.putInt("DataVersion", DATA_VERSION);
+
+        tag.putString("Color", color.getId());
+        tag.putInt("Genki", genki);
+        tag.putInt("Kashikosa", kashikosa);
+        tag.putInt("Chikara", chikara);
+        tag.putInt("Stress", stress);
+
+        tag.putBoolean("Training", training);
+        tag.putBoolean("Adventuring", adventuring);
+        tag.putString("AnimState", animState.name());
+
+        if (entityUuid != null) {
+            tag.putString("EntityUuid", entityUuid.toString());
+        }
+
+        tag.putString("TrainingType", trainingType);
+        tag.putInt("TrainingLevel", trainingLevel);
+        tag.putLong("TrainingEndTick", trainingEndTick);
+        tag.putBoolean("TrainingCompleted", trainingCompleted);
+        tag.putLong("TrainingLastRewardTick", trainingLastRewardTick);
+
+        tag.putLong("AdventureEndTick", adventureEndTick);
+
+        tag.putBoolean("Sleeping", sleeping);
+        tag.putLong("SleepingSinceTick", sleepingSinceTick);
+    }
+
+    public static TreeChibishiroData load(CompoundTag tag) {
+        int version = tag.getInt("DataVersion").orElse(0);
+
+        String colorId = tag.getString("Color").orElse("white");
+        ChibishiroColor color = switch (colorId) {
             case "blue" -> ChibishiroColor.BLUE;
             case "yellow" -> ChibishiroColor.YELLOW;
             case "purple" -> ChibishiroColor.PURPLE;
@@ -193,14 +237,16 @@ public class TreeChibishiroData {
         };
 
         TreeChibishiroData data = new TreeChibishiroData(color);
-        data.genki = nbt.getInt("Genki");
-        data.kashikosa = nbt.getInt("Kashikosa");
-        data.chikara = nbt.getInt("Chikara");
-        data.stress = nbt.getInt("Stress");
-        data.training = nbt.getBoolean("Training");
-        data.adventuring = nbt.getBoolean("Adventuring");
 
-        String animName = nbt.getString("AnimState");
+        data.genki = tag.getInt("Genki").orElse(100);
+        data.kashikosa = tag.getInt("Kashikosa").orElse(0);
+        data.chikara = tag.getInt("Chikara").orElse(0);
+        data.stress = tag.getInt("Stress").orElse(0);
+
+        data.training = tag.getBoolean("Training").orElse(false);
+        data.adventuring = tag.getBoolean("Adventuring").orElse(false);
+
+        String animName = tag.getString("AnimState").orElse("IDLE");
         try {
             data.animState = animName.isEmpty()
                     ? ChibishiroAnimState.IDLE
@@ -209,30 +255,40 @@ public class TreeChibishiroData {
             data.animState = ChibishiroAnimState.IDLE;
         }
 
-        if (nbt.containsUuid("EntityUuid")) {
-            data.entityUuid = nbt.getUuid("EntityUuid");
+        String uuidString = tag.getString("EntityUuid").orElse("");
+        if (!uuidString.isEmpty()) {
+            try {
+                data.entityUuid = UUID.fromString(uuidString);
+            } catch (IllegalArgumentException ignored) {
+                data.entityUuid = null;
+            }
         }
 
-        // 追加
-        data.trainingType = nbt.getString("TrainingType");
-        data.trainingLevel = nbt.getInt("TrainingLevel");
-        data.trainingEndTick = nbt.getLong("TrainingEndTick");
-        data.trainingCompleted = nbt.getBoolean("TrainingCompleted");
+        data.trainingType = tag.getString("TrainingType").orElse("");
+        data.trainingLevel = tag.getInt("TrainingLevel").orElse(0);
+        data.trainingEndTick = tag.getLong("TrainingEndTick").orElse(0L);
+        data.trainingCompleted = tag.getBoolean("TrainingCompleted").orElse(false);
 
-        data.adventureEndTick = nbt.getLong("AdventureEndTick");
-        data.trainingLastRewardTick = nbt.getLong("trainingLastRewardTick");
-        data.sleeping = nbt.getBoolean("Sleeping");
-        data.sleepingSinceTick = nbt.getLong("SleepingSinceTick");
+        if (version <= 0) {
+            data.trainingLastRewardTick = tag.getLong("trainingLastRewardTick").orElse(0L);
+        } else {
+            data.trainingLastRewardTick = tag.getLong("TrainingLastRewardTick").orElse(0L);
+        }
 
+        data.adventureEndTick = tag.getLong("AdventureEndTick").orElse(0L);
+
+        data.sleeping = tag.getBoolean("Sleeping").orElse(false);
+        data.sleepingSinceTick = tag.getLong("SleepingSinceTick").orElse(0L);
 
         return data;
     }
 
-    public long getAdventureEndTick() {
-        return adventureEndTick;
+    // 呼び出し側の移行を楽にするための互換メソッド
+    public void writeNbt(CompoundTag tag) {
+        save(tag);
     }
 
-    public void setAdventureEndTick(long adventureEndTick) {
-        this.adventureEndTick = adventureEndTick;
+    public static TreeChibishiroData fromNbt(CompoundTag tag) {
+        return load(tag);
     }
 }

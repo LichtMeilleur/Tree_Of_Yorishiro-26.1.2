@@ -1,217 +1,197 @@
 package com.licht_meilleur.tree_of_yorishiro.block;
 
 import com.licht_meilleur.tree_of_yorishiro.block.entity.TreeOfYorishiroBlockEntity;
+import com.licht_meilleur.tree_of_yorishiro.registry.ModBlockEntities;
 import com.licht_meilleur.tree_of_yorishiro.registry.ModBlocks;
-import com.licht_meilleur.tree_of_yorishiro.registry.ModItems;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockEntityProvider;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.ShapeContext;
-import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.block.entity.BlockEntityTicker;
-import net.minecraft.block.entity.BlockEntityType;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.ItemPlacementContext;
-import net.minecraft.item.ItemStack;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.state.StateManager;
-import net.minecraft.state.property.DirectionProperty;
-import net.minecraft.state.property.Properties;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.Hand;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.shape.VoxelShape;
-import net.minecraft.world.BlockView;
-import net.minecraft.world.World;
+import com.mojang.serialization.MapCodec;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.MenuProvider;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.BaseEntityBlock;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.RenderShape;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityTicker;
+import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.EnumProperty;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jetbrains.annotations.Nullable;
 
-public class TreeOfYorishiroBlock extends Block implements BlockEntityProvider {
+public class TreeOfYorishiroBlock extends BaseEntityBlock {
 
-    public static final DirectionProperty FACING = Properties.HORIZONTAL_FACING;
+    public static final MapCodec<TreeOfYorishiroBlock> CODEC =
+            simpleCodec(TreeOfYorishiroBlock::new);
 
-    private static final VoxelShape BASE_SHAPE = Block.createCuboidShape(0, 0, 0, 16, 16, 16);
+    public static final EnumProperty<Direction> FACING =
+            BlockStateProperties.HORIZONTAL_FACING;
 
-    private static final int[][] COLLISION_OFFSETS = {
-            {0, 1, 0},
-            {0, 2, 0},
-            {0, 3, 0},
-            {0, 4, 0},
-            {0, 5, 0},
-            {0, 6, 0},
+    private static final VoxelShape BASE_SHAPE = Block.box(0, 0, 0, 16, 16, 16);
 
-            {-1, 3, 0},
-            {-2, 3, 0},
-            {-2, 5, 0},
-            {-3, 6, 0},
-            {-1, 5, 0},
-            {1, 5, 0},
-            {2, 5, 0},
-            {2, 6, 0},
-            {0, 3, 0},
-            {1, 3, 0},
-            {2, 3, 0},
-
-            {-3, 7, -3},
-            {-3, 7, -1},
-            {0, 7, -3},
-            {0, 7, -1}
-    };
-
-    public TreeOfYorishiroBlock(Settings settings) {
-        super(settings);
-        this.setDefaultState(this.stateManager.getDefaultState().with(FACING, Direction.NORTH));
+    public TreeOfYorishiroBlock(Properties properties) {
+        super(properties);
+        this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
     }
 
     @Override
-    protected void appendProperties(StateManager.Builder<Block, BlockState> builder) {
+    protected MapCodec<? extends BaseEntityBlock> codec() {
+        return CODEC;
+    }
+
+    @Override
+    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
         builder.add(FACING);
     }
 
     @Override
-    public @Nullable BlockState getPlacementState(ItemPlacementContext ctx) {
-        return this.getDefaultState().with(FACING, ctx.getHorizontalPlayerFacing().getOpposite());
+    public @Nullable BlockState getStateForPlacement(BlockPlaceContext context) {
+        return this.defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite());
     }
 
     @Override
-    public @Nullable BlockEntity createBlockEntity(BlockPos pos, BlockState state) {
+    public @Nullable BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         return new TreeOfYorishiroBlockEntity(pos, state);
     }
 
+    // 🔥 ENTITYBLOCK_ANIMATEDは存在しない
     @Override
-    public void onPlaced(World world, BlockPos pos, BlockState state,
-                         @Nullable LivingEntity placer, ItemStack itemStack) {
-        super.onPlaced(world, pos, state, placer, itemStack);
+    protected RenderShape getRenderShape(BlockState state) {
+        return RenderShape.MODEL;
+    }
 
-        if (!(world instanceof ServerWorld sw)) return;
-        if (!(sw.getBlockEntity(pos) instanceof TreeOfYorishiroBlockEntity be)) return;
+    @Override
+    public void setPlacedBy(Level level, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack stack) {
+        super.setPlacedBy(level, pos, state, placer, stack);
+
+        if (!(level instanceof ServerLevel serverLevel)) return;
+        if (!(serverLevel.getBlockEntity(pos) instanceof TreeOfYorishiroBlockEntity be)) return;
 
         be.initDefaultChibisIfNeeded();
         be.startGrowAnimation();
-        be.markDirty();
+        be.setChanged();
 
-        clearNearbyCollisionBlocks(world, pos);
-        placeCollisionBlocks(world, pos, state);
+        clearNearbyCollisionBlocks(level, pos);
+        placeCollisionBlocks(level, pos, state);
     }
 
     @Override
-    public ActionResult onUse(BlockState state, World world, BlockPos pos,
-                              PlayerEntity player, Hand hand, BlockHitResult hit) {
-        if (!world.isClient) {
-            if (world.getBlockEntity(pos) instanceof TreeOfYorishiroBlockEntity be) {
-                player.openHandledScreen(be);
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+        if (!level.isClientSide()) {
+            BlockEntity raw = level.getBlockEntity(pos);
+            if (raw instanceof MenuProvider provider) {
+                player.openMenu(provider);
             }
         }
-        return ActionResult.SUCCESS;
+        return InteractionResult.SUCCESS;
     }
 
     @Override
-    @Nullable
-    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(
-            World world,
+    public <T extends BlockEntity> @Nullable BlockEntityTicker<T> getTicker(
+            Level level,
             BlockState state,
-            BlockEntityType<T> type) {
+            BlockEntityType<T> type
+    ) {
+        if (level.isClientSide()) return null;
 
-        if (world.isClient) {
-            return null;
-        }
-
-        return new BlockEntityTicker<T>() {
-            @Override
-            public void tick(World world1, BlockPos pos1, BlockState state1, T be) {
-                if (be instanceof TreeOfYorishiroBlockEntity yorishiro) {
-                    TreeOfYorishiroBlockEntity.tick(world1, pos1, state1, yorishiro);
-                }
-            }
-        };
+        return type == ModBlockEntities.TREE_OF_YORISHIRO
+                ? (lvl, p, s, be) -> TreeOfYorishiroBlockEntity.tick(lvl, p, s, (TreeOfYorishiroBlockEntity) be)
+                : null;
     }
 
+    // 🔥 戻り値ありに修正
     @Override
-    public void onStateReplaced(BlockState state, World world, BlockPos pos, BlockState newState, boolean moved) {
-        if (state.isOf(newState.getBlock())) {
-            super.onStateReplaced(state, world, pos, newState, moved);
-            return;
-        }
+    public BlockState playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
+        if (!level.isClientSide()) {
+            BlockEntity raw = level.getBlockEntity(pos);
 
-        if (!world.isClient) {
-            BlockEntity be = world.getBlockEntity(pos);
-            if (be instanceof TreeOfYorishiroBlockEntity treeBe) {
-                treeBe.removeAllChibishiro();
+            if (raw instanceof TreeOfYorishiroBlockEntity treeBe) {
+                // 一旦コメントアウト（未実装）
+                // treeBe.removeAllChibishiro();
             }
 
-            removeCollisionBlocks(world, pos, state);
+            removeCollisionBlocks(level, pos, state);
         }
 
-        super.onStateReplaced(state, world, pos, newState, moved);
+        return super.playerWillDestroy(level, pos, state, player);
     }
 
     @Override
-    public void onBreak(World world, BlockPos pos, BlockState state, PlayerEntity player) {
-        if (!world.isClient) {
-            removeCollisionBlocks(world, pos, state);
-
-            dropStack(world, pos, new ItemStack(ModItems.TREE_OF_YORISHIRO_ITEM));
-        }
-
-        super.onBreak(world, pos, state, player);
-    }
-
-    @Override
-    public VoxelShape getCollisionShape(BlockState state, BlockView world, BlockPos pos, ShapeContext context) {
+    protected VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
         return BASE_SHAPE;
     }
 
     @Override
-    public VoxelShape getOutlineShape(BlockState state, BlockView world, BlockPos pos, ShapeContext context) {
+    protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
         return BASE_SHAPE;
     }
 
     private BlockPos rotateOffset(BlockPos origin, int offX, int offY, int offZ, Direction facing) {
         return switch (facing) {
-            case SOUTH -> origin.add(offX, offY, offZ);
-            case WEST  -> origin.add(-offZ, offY, offX);
-            case NORTH -> origin.add(-offX, offY, -offZ);
-            case EAST  -> origin.add(offZ, offY, -offX);
-            default    -> origin.add(offX, offY, offZ);
+            case SOUTH -> origin.offset(offX, offY, offZ);
+            case WEST -> origin.offset(-offZ, offY, offX);
+            case NORTH -> origin.offset(-offX, offY, -offZ);
+            case EAST -> origin.offset(offZ, offY, -offX);
+            default -> origin.offset(offX, offY, offZ);
         };
     }
 
-    private void placeCollisionBlocks(World world, BlockPos pos, BlockState state) {
-        Direction facing = state.get(FACING);
+    private void placeCollisionBlocks(Level level, BlockPos pos, BlockState state) {
+        Direction facing = state.getValue(FACING);
 
-        for (int[] offset : COLLISION_OFFSETS) {
+        for (int[] offset : collisionOffsets()) {
             BlockPos target = rotateOffset(pos, offset[0], offset[1], offset[2], facing);
 
-            if (world.getBlockState(target).isAir()) {
-                world.setBlockState(target, ModBlocks.YORISHIRO_TRUNK_COLLISION.getDefaultState(), Block.NOTIFY_ALL);
+            if (level.getBlockState(target).isAir()) {
+                level.setBlock(target, ModBlocks.YORISHIRO_TRUNK_COLLISION.defaultBlockState(), Block.UPDATE_ALL);
             }
         }
     }
 
-    private void removeCollisionBlocks(World world, BlockPos pos, BlockState state) {
-        Direction facing = state.get(FACING);
+    private void removeCollisionBlocks(Level level, BlockPos pos, BlockState state) {
+        Direction facing = state.getValue(FACING);
 
-        for (int[] offset : COLLISION_OFFSETS) {
+        for (int[] offset : collisionOffsets()) {
             BlockPos target = rotateOffset(pos, offset[0], offset[1], offset[2], facing);
 
-            if (world.getBlockState(target).isOf(ModBlocks.YORISHIRO_TRUNK_COLLISION)) {
-                world.removeBlock(target, false);
+            if (level.getBlockState(target).is(ModBlocks.YORISHIRO_TRUNK_COLLISION)) {
+                level.removeBlock(target, false);
             }
         }
     }
 
-    private void clearNearbyCollisionBlocks(World world, BlockPos pos) {
+    private void clearNearbyCollisionBlocks(Level level, BlockPos pos) {
         for (int dx = -4; dx <= 4; dx++) {
             for (int dy = 0; dy <= 8; dy++) {
                 for (int dz = -4; dz <= 4; dz++) {
-                    BlockPos target = pos.add(dx, dy, dz);
-                    if (world.getBlockState(target).isOf(ModBlocks.YORISHIRO_TRUNK_COLLISION)) {
-                        world.removeBlock(target, false);
+                    BlockPos target = pos.offset(dx, dy, dz);
+
+                    if (level.getBlockState(target).is(ModBlocks.YORISHIRO_TRUNK_COLLISION)) {
+                        level.removeBlock(target, false);
                     }
                 }
             }
         }
+    }
+
+    private static int[][] collisionOffsets() {
+        return new int[][]{
+                {0, 1, 0}, {0, 2, 0}, {0, 3, 0}, {0, 4, 0}, {0, 5, 0}, {0, 6, 0},
+                {-1, 3, 0}, {-2, 3, 0}, {-2, 5, 0}, {-3, 6, 0},
+                {-1, 5, 0}, {1, 5, 0}, {2, 5, 0}, {2, 6, 0},
+                {1, 3, 0}, {2, 3, 0},
+                {-3, 7, -3}, {-3, 7, -1}, {0, 7, -3}, {0, 7, -1}
+        };
     }
 }

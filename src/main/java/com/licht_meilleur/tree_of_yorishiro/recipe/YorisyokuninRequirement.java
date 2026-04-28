@@ -1,11 +1,13 @@
 package com.licht_meilleur.tree_of_yorishiro.recipe;
 
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.potion.PotionUtil;
-import net.minecraft.potion.Potions;
-import net.minecraft.registry.Registries;
-import net.minecraft.registry.tag.TagKey;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.tags.TagKey;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.alchemy.PotionContents;
+import net.minecraft.world.item.alchemy.Potions;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -49,7 +51,7 @@ public class YorisyokuninRequirement {
 
         return switch (type) {
             case ITEM -> items.contains(stack.getItem());
-            case TAG -> stack.isIn(tag);
+            case TAG -> tag != null && stack.is(tag);
             case WATER_BOTTLE -> isWaterBottle(stack);
         };
     }
@@ -64,8 +66,10 @@ public class YorisyokuninRequirement {
                 }
             }
             case TAG -> {
-                for (var entry : Registries.ITEM.iterateEntries(tag)) {
-                    result.add(new ItemStack(entry.value()));
+                if (tag != null) {
+                    for (var entry : BuiltInRegistries.ITEM.getTagOrEmpty(tag)) {
+                        result.add(new ItemStack(entry.value()));
+                    }
                 }
             }
             case WATER_BOTTLE -> result.add(makeWaterBottle());
@@ -81,10 +85,15 @@ public class YorisyokuninRequirement {
     }
 
     private static boolean isWaterBottle(ItemStack stack) {
-        return PotionUtil.getPotion(stack) == Potions.WATER;
+        PotionContents potion = stack.get(DataComponents.POTION_CONTENTS);
+        return stack.is(Items.POTION)
+                && potion != null
+                && potion.is(Potions.WATER);
     }
 
     private static ItemStack makeWaterBottle() {
-        return PotionUtil.setPotion(new ItemStack(net.minecraft.item.Items.POTION), Potions.WATER);
+        ItemStack stack = new ItemStack(Items.POTION);
+        stack.set(DataComponents.POTION_CONTENTS, new PotionContents(Potions.WATER));
+        return stack;
     }
 }

@@ -1,45 +1,45 @@
 package com.licht_meilleur.tree_of_yorishiro.registry;
 
 import com.licht_meilleur.tree_of_yorishiro.TreeofYorishiroMod;
-import net.fabricmc.fabric.api.itemgroup.v1.FabricItemGroup;
-import net.minecraft.item.ItemGroup;
-import net.minecraft.item.ItemStack;
-import net.minecraft.registry.Registries;
-import net.minecraft.registry.Registry;
-import net.minecraft.text.Text;
+import net.minecraft.core.Registry;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.CreativeModeTab;
+import net.minecraft.world.item.ItemStack;
 
 public class ModItemGroups {
 
-    public static final ItemGroup TREE_OF_YORISHIRO_GROUP = Registry.register(
-            Registries.ITEM_GROUP,
+    public static final CreativeModeTab TREE_OF_YORISHIRO_GROUP = Registry.register(
+            BuiltInRegistries.CREATIVE_MODE_TAB,
             TreeofYorishiroMod.id("tree_of_yorishiro_group"),
-            FabricItemGroup.builder()
-                    .displayName(Text.translatable("itemGroup.tree_of_yorishiro.group"))
+            CreativeModeTab.builder(CreativeModeTab.Row.TOP, 0)
+                    .title(Component.translatable("itemGroup.tree_of_yorishiro.group"))
                     .icon(() -> new ItemStack(ModItems.YORISHIRO_STONE))
-                    .entries((displayContext, entries) -> {
-                        entries.add(ModItems.YORISHIRO_STONE);
-                        entries.add(ModItems.RAINBOW_SEED);
-                        entries.add(ModItems.TREE_OF_YORISHIRO_ITEM);
-                        entries.add(ModItems.YORISYOKUNIN_SUMMON);
+                    .displayItems((parameters, output) -> {
+                        output.accept(ModItems.YORISHIRO_STONE);
+                        output.accept(ModItems.RAINBOW_SEED);
+                        output.accept(ModItems.TREE_OF_YORISHIRO_ITEM);
 
-                        entries.add(ModItems.STUDY_BOOK);
-                        entries.add(ModItems.STUDY_SET);
-                        entries.add(ModItems.HARD_STUDY_SET);
+                        output.accept(ModItems.YORISYOKUNIN_SUMMON);
 
-                        entries.add(ModItems.HEADBAND);
-                        entries.add(ModItems.PUNCHING_SET);
-                        entries.add(ModItems.RUNNING_SET);
+                        output.accept(ModItems.STUDY_BOOK);
+                        output.accept(ModItems.STUDY_SET);
+                        output.accept(ModItems.HARD_STUDY_SET);
 
-                        entries.add(ModItems.BALL);
-                        entries.add(ModItems.BUBBLE_SET);
-                        entries.add(ModItems.GAME);
+                        output.accept(ModItems.HEADBAND);
+                        output.accept(ModItems.PUNCHING_SET);
+                        output.accept(ModItems.RUNNING_SET);
 
-                        entries.add(ModItems.GLASSES_AND_PEN);
-                        entries.add(ModItems.PUNCHING_MACHINE);
-                        entries.add(ModItems.RUNNING_MACHINE);
-                        entries.add(ModItems.STUDY_DESK);
+                        output.accept(ModItems.BALL);
+                        output.accept(ModItems.BUBBLE_SET);
+                        output.accept(ModItems.GAME);
 
-                        entries.add(ModItems.DEBUG_TREE_OF_YORISHIRO_ITEM);
+                        output.accept(ModItems.GLASSES_AND_PEN);
+                        output.accept(ModItems.PUNCHING_MACHINE);
+                        output.accept(ModItems.RUNNING_MACHINE);
+                        output.accept(ModItems.STUDY_DESK);
+
+                        output.accept(ModItems.DEBUG_TREE_OF_YORISHIRO_ITEM);
                     })
                     .build()
     );

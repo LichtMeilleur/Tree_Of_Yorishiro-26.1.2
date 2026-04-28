@@ -4,8 +4,8 @@ import com.licht_meilleur.tree_of_yorishiro.block.entity.TreeChibishiroData;
 import com.licht_meilleur.tree_of_yorishiro.block.entity.TreeOfYorishiroBlockEntity;
 import com.licht_meilleur.tree_of_yorishiro.entity.ChibishiroAnimState;
 import com.licht_meilleur.tree_of_yorishiro.entity.ChibishiroEntity;
-import net.minecraft.entity.ai.goal.Goal;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.entity.ai.goal.Goal;
 
 import java.util.EnumSet;
 
@@ -16,17 +16,17 @@ public class ChibishiroAssignedTaskGoal extends Goal {
 
     public ChibishiroAssignedTaskGoal(ChibishiroEntity chibi) {
         this.chibi = chibi;
-        this.setControls(EnumSet.of(Control.MOVE, Control.LOOK));
+        this.setFlags(EnumSet.of(Flag.MOVE, Flag.LOOK));
     }
 
     @Override
-    public boolean canStart() {
+    public boolean canUse() {
         TreeChibishiroData data = getTaskData();
         return data != null && data.isTraining();
     }
 
     @Override
-    public boolean shouldContinue() {
+    public boolean canContinueToUse() {
         TreeChibishiroData data = getTaskData();
         return data != null && data.isTraining();
     }
@@ -41,7 +41,7 @@ public class ChibishiroAssignedTaskGoal extends Goal {
         this.startedAnimation = false;
         this.chibi.getNavigation().stop();
 
-        if (!chibi.getWorld().isClient()) {
+        if (!chibi.level().isClientSide()) {
             chibi.setAnimState(ChibishiroAnimState.IDLE);
             chibi.setAnimTicks(0);
         }
@@ -59,16 +59,20 @@ public class ChibishiroAssignedTaskGoal extends Goal {
         double ty = home.getY() + 1.0;
         double tz = home.getZ() + 0.5;
 
-        double distSq = chibi.squaredDistanceTo(tx, ty, tz);
+        double distSq = chibi.distanceToSqr(tx, ty, tz);
 
-        if (distSq > 6.0D) {
-            chibi.getNavigation().startMovingTo(tx, ty, tz, 1.0D);
+        // 🔥 ここだけ微修正（距離少し余裕）
+        if (distSq > 6.25D) {
+            chibi.getNavigation().moveTo(tx, ty, tz, 1.0D);
             return;
         }
 
         chibi.getNavigation().stop();
-        chibi.setVelocity(0.0, chibi.getVelocity().y, 0.0);
-        chibi.getLookControl().lookAt(tx, ty, tz);
+
+        // 🔥 安定版（完全停止）
+        chibi.setDeltaMovement(0.0, 0.0, 0.0);
+
+        chibi.getLookControl().setLookAt(tx, ty, tz);
 
         if (!startedAnimation) {
             startedAnimation = true;
@@ -82,16 +86,19 @@ public class ChibishiroAssignedTaskGoal extends Goal {
 
         switch (type) {
             case "MEAL" -> chibi.startMealTask();
+
             case "STUDY" -> {
                 if (level == 1) chibi.startStudy1Task();
                 else if (level == 2) chibi.startStudy2Task();
                 else if (level == 3) chibi.startStudy3Task();
             }
+
             case "EXERCISE" -> {
                 if (level == 1) chibi.startTraining1Task();
                 else if (level == 2) chibi.startTraining2Task();
                 else if (level == 3) chibi.startTraining3Task();
             }
+
             case "PLAY" -> {
                 if (level == 1) chibi.startGame1Task();
                 else if (level == 2) chibi.startGame2Task();
@@ -104,7 +111,7 @@ public class ChibishiroAssignedTaskGoal extends Goal {
         BlockPos home = chibi.getHomeTreePos();
         if (home == null) return null;
 
-        if (!(chibi.getWorld().getBlockEntity(home) instanceof TreeOfYorishiroBlockEntity be)) {
+        if (!(chibi.level().getBlockEntity(home) instanceof TreeOfYorishiroBlockEntity be)) {
             return null;
         }
 

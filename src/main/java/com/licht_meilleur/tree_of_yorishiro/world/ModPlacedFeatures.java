@@ -1,15 +1,15 @@
 package com.licht_meilleur.tree_of_yorishiro.world;
 
 import com.licht_meilleur.tree_of_yorishiro.TreeofYorishiroMod;
-import net.minecraft.registry.RegistryKey;
-import net.minecraft.registry.RegistryKeys;
-import net.minecraft.world.gen.feature.PlacedFeature;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.level.levelgen.placement.PlacedFeature;
 
 public class ModPlacedFeatures {
 
-    public static final RegistryKey<PlacedFeature> YORISHIRO_STONE =
-            RegistryKey.of(
-                    RegistryKeys.PLACED_FEATURE,
+    public static final ResourceKey<PlacedFeature> YORISHIRO_STONE =
+            ResourceKey.create(
+                    Registries.PLACED_FEATURE,
                     TreeofYorishiroMod.id("yorishiro_stone")
             );
 

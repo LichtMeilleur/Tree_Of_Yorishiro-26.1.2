@@ -1,6 +1,6 @@
 package com.licht_meilleur.tree_of_yorishiro.recipe;
 
-import net.minecraft.item.ItemStack;
+import net.minecraft.world.item.ItemStack;
 
 import java.util.List;
 
@@ -24,6 +24,7 @@ public class YorisyokuninRecipeDef {
 
     public boolean matches(List<ItemStack> stacks) {
         int nonEmptyCount = 0;
+
         for (ItemStack stack : stacks) {
             if (!stack.isEmpty()) {
                 nonEmptyCount++;

@@ -3,194 +3,167 @@ package com.licht_meilleur.tree_of_yorishiro.block;
 import com.licht_meilleur.tree_of_yorishiro.block.entity.SyokuninDeskBlockEntity;
 import com.licht_meilleur.tree_of_yorishiro.registry.ModBlockEntities;
 import com.licht_meilleur.tree_of_yorishiro.registry.ModBlocks;
-import com.licht_meilleur.tree_of_yorishiro.registry.ModItems;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockRenderType;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.BlockWithEntity;
-import net.minecraft.block.ShapeContext;
-import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.block.entity.BlockEntityTicker;
-import net.minecraft.block.entity.BlockEntityType;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.ItemPlacementContext;
-import net.minecraft.item.ItemStack;
-import net.minecraft.screen.NamedScreenHandlerFactory;
-import net.minecraft.state.StateManager;
-import net.minecraft.state.property.DirectionProperty;
-import net.minecraft.state.property.Properties;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.Hand;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.shape.VoxelShape;
-import net.minecraft.util.shape.VoxelShapes;
-import net.minecraft.world.BlockView;
-import net.minecraft.world.World;
+import com.mojang.serialization.MapCodec;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.MenuProvider;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.BaseEntityBlock;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.RenderShape;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityTicker;
+import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.block.state.properties.EnumProperty;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.Shapes;
+import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jetbrains.annotations.Nullable;
 
-public class SyokuninDeskBlock extends BlockWithEntity {
+public class SyokuninDeskBlock extends BaseEntityBlock {
 
-    public static final DirectionProperty FACING = Properties.HORIZONTAL_FACING;
+    public static final MapCodec<SyokuninDeskBlock> CODEC = simpleCodec(SyokuninDeskBlock::new);
 
-    public SyokuninDeskBlock(Settings settings) {
-        super(settings);
-        this.setDefaultState(this.stateManager.getDefaultState().with(FACING, Direction.NORTH));
+    public static final EnumProperty<Direction> FACING = BlockStateProperties.HORIZONTAL_FACING;
+
+    private static final BlockPos[] NORTH_COLLISIONS = new BlockPos[]{
+            new BlockPos(0, 0, -1),
+            new BlockPos(-1, 0, -1),
+            new BlockPos(-1, 1, -1),
+            new BlockPos(-1, 1, 0),
+            new BlockPos(-1, 0, 1),
+            new BlockPos(0, 0, 1),
+            new BlockPos(1, 0, 1),
+            new BlockPos(1, 1, 1),
+            new BlockPos(1, 2, 1)
+    };
+
+    public SyokuninDeskBlock(Properties properties) {
+        super(properties);
+        this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
     }
 
     @Override
-    public BlockRenderType getRenderType(BlockState state) {
-        return BlockRenderType.ENTITYBLOCK_ANIMATED;
+    protected MapCodec<? extends BaseEntityBlock> codec() {
+        return CODEC;
     }
 
     @Override
-    public @Nullable BlockEntity createBlockEntity(BlockPos pos, BlockState state) {
+    protected RenderShape getRenderShape(BlockState state) {
+        return RenderShape.MODEL;
+    }
+
+    @Override
+    public @Nullable BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         return new SyokuninDeskBlockEntity(pos, state);
     }
 
     @Override
-    public BlockState getPlacementState(ItemPlacementContext ctx) {
-        return this.getDefaultState().with(FACING, ctx.getHorizontalPlayerFacing().getOpposite());
+    public @Nullable BlockState getStateForPlacement(BlockPlaceContext context) {
+        return this.defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite());
     }
 
     @Override
-    protected void appendProperties(StateManager.Builder<Block, BlockState> builder) {
+    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
         builder.add(FACING);
     }
 
     @Override
-    public ActionResult onUse(BlockState state, World world, BlockPos pos,
-                              PlayerEntity player, Hand hand, BlockHitResult hit) {
-        if (world.isClient) return ActionResult.SUCCESS;
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+        if (!level.isClientSide()) {
+            BlockEntity raw = level.getBlockEntity(pos);
 
-        NamedScreenHandlerFactory factory = state.createScreenHandlerFactory(world, pos);
-        if (factory != null) {
-            player.openHandledScreen(factory);
+            if (raw instanceof MenuProvider provider) {
+                player.openMenu(provider);
+            }
         }
 
-        return ActionResult.CONSUME;
-    }
-
-    // 本体には判定を持たせない
-    @Override
-    public VoxelShape getCollisionShape(BlockState state, BlockView world, BlockPos pos, ShapeContext context) {
-        return VoxelShapes.empty();
+        return InteractionResult.SUCCESS;
     }
 
     @Override
-    public VoxelShape getOutlineShape(BlockState state, BlockView world, BlockPos pos, ShapeContext context) {
-        return VoxelShapes.empty();
+    protected VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+        return Shapes.empty();
     }
 
-    /**
-     * 北向き基準
-     * 本体(0,0,0)には置かない
-     *
-     * 北:      (0,0,-1)
-     * 北西:    (-1,0,-1)
-     * 西上段:  (-1,1,-1), (-1,1,0)
-     * 南西:    (-1,0,1)
-     * 南:      (0,0,1)
-     * 南東3段: (1,0,1), (1,1,1), (1,2,1)
-     */
-    private static final BlockPos[] NORTH_COLLISIONS = new BlockPos[] {
-            new BlockPos( 0, 0, -1),// 北
-            new BlockPos(-1, 0, -1),
+    @Override
+    protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+        return Shapes.empty();
+    }
 
-            new BlockPos(-1, 1, -1),
-            new BlockPos(-1, 1,  0),
+    @Override
+    public void setPlacedBy(Level level, BlockPos pos, BlockState state,
+                            @Nullable LivingEntity placer, ItemStack stack) {
+        super.setPlacedBy(level, pos, state, placer, stack);
 
-            new BlockPos(-1, 0,  1),
-            new BlockPos( 0, 0,  1),
+        if (!level.isClientSide()) {
+            placeCollisionBlocks(level, pos, state);
+        }
+    }
 
-            new BlockPos( 1, 0,  1),
-            new BlockPos( 1, 1,  1),
-            new BlockPos( 1, 2,  1)
-    };
+    @Override
+    public BlockState playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
+        if (!level.isClientSide()) {
+            removeCollisionBlocks(level, pos, state);
+        }
+
+        return super.playerWillDestroy(level, pos, state, player);
+    }
+
+    @Override
+    public <T extends BlockEntity> @Nullable BlockEntityTicker<T> getTicker(
+            Level level,
+            BlockState state,
+            BlockEntityType<T> type
+    ) {
+        if (level.isClientSide()) return null;
+
+        return type == ModBlockEntities.SYOKUNIN_DESK
+                ? (lvl, p, s, be) -> SyokuninDeskBlockEntity.tick(lvl, p, s, (SyokuninDeskBlockEntity) be)
+                : null;
+    }
 
     private static BlockPos rotateOffset(BlockPos offset, Direction facing) {
         return switch (facing) {
             case NORTH -> offset;
-            case EAST  -> new BlockPos(-offset.getZ(), offset.getY(), offset.getX());
+            case EAST -> new BlockPos(-offset.getZ(), offset.getY(), offset.getX());
             case SOUTH -> new BlockPos(-offset.getX(), offset.getY(), -offset.getZ());
-            case WEST  -> new BlockPos(offset.getZ(), offset.getY(), -offset.getX());
-            default    -> offset;
+            case WEST -> new BlockPos(offset.getZ(), offset.getY(), -offset.getX());
+            default -> offset;
         };
     }
 
-    public static void placeCollisionBlocks(World world, BlockPos pos, BlockState state) {
-        if (!(state.getBlock() instanceof SyokuninDeskBlock)) return;
-
-        Direction facing = state.get(FACING);
+    public static void placeCollisionBlocks(Level level, BlockPos pos, BlockState state) {
+        Direction facing = state.getValue(FACING);
 
         for (BlockPos baseOffset : NORTH_COLLISIONS) {
-            BlockPos rotated = rotateOffset(baseOffset, facing);
-            BlockPos targetPos = pos.add(rotated);
+            BlockPos targetPos = pos.offset(rotateOffset(baseOffset, facing));
 
-            if (world.getBlockState(targetPos).isAir()) {
-                world.setBlockState(targetPos, ModBlocks.SYOKUNIN_DESK_COLLISION.getDefaultState(), Block.NOTIFY_ALL);
+            if (level.getBlockState(targetPos).isAir()) {
+                level.setBlock(targetPos, ModBlocks.SYOKUNIN_DESK_COLLISION.defaultBlockState(), Block.UPDATE_ALL);
             }
         }
     }
 
-    public static void removeCollisionBlocks(World world, BlockPos pos, BlockState state) {
-        if (!(state.getBlock() instanceof SyokuninDeskBlock)) return;
-
-        Direction facing = state.get(FACING);
+    public static void removeCollisionBlocks(Level level, BlockPos pos, BlockState state) {
+        Direction facing = state.getValue(FACING);
 
         for (BlockPos baseOffset : NORTH_COLLISIONS) {
-            BlockPos rotated = rotateOffset(baseOffset, facing);
-            BlockPos targetPos = pos.add(rotated);
+            BlockPos targetPos = pos.offset(rotateOffset(baseOffset, facing));
 
-            if (world.getBlockState(targetPos).isOf(ModBlocks.SYOKUNIN_DESK_COLLISION)) {
-                world.removeBlock(targetPos, false);
+            if (level.getBlockState(targetPos).is(ModBlocks.SYOKUNIN_DESK_COLLISION)) {
+                level.removeBlock(targetPos, false);
             }
         }
-    }
-
-    @Override
-    public void onPlaced(World world, BlockPos pos, BlockState state,
-                         @Nullable LivingEntity placer, ItemStack itemStack) {
-        super.onPlaced(world, pos, state, placer, itemStack);
-
-        if (!world.isClient) {
-            placeCollisionBlocks(world, pos, state);
-        }
-    }
-
-    @Override
-    public void onStateReplaced(BlockState state, World world, BlockPos pos,
-                                BlockState newState, boolean moved) {
-        if (state.getBlock() != newState.getBlock()) {
-            if (!world.isClient && world.getBlockEntity(pos) instanceof SyokuninDeskBlockEntity be) {
-                be.discardYorisyokunin();
-            }
-
-            removeCollisionBlocks(world, pos, state);
-        }
-
-        super.onStateReplaced(state, world, pos, newState, moved);
-    }
-    @Override
-    public void onBreak(World world, BlockPos pos, BlockState state, PlayerEntity player) {
-        if (!world.isClient) {
-
-        }
-
-        super.onBreak(world, pos, state, player);
-    }
-    @Override
-    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(
-            World world,
-            BlockState state,
-            BlockEntityType<T> type
-    ) {
-        return world.isClient ? null : checkType(
-                type,
-                ModBlockEntities.SYOKUNIN_DESK,
-                SyokuninDeskBlockEntity::tick
-        );
     }
 }

@@ -1,26 +1,23 @@
 package com.licht_meilleur.tree_of_yorishiro.screen;
 
-import com.licht_meilleur.tree_of_yorishiro.block.entity.TreeChibishiroData;
 import com.licht_meilleur.tree_of_yorishiro.block.entity.TreeOfYorishiroBlockEntity;
-import com.licht_meilleur.tree_of_yorishiro.entity.ChibishiroAnimState;
 import com.licht_meilleur.tree_of_yorishiro.entity.ChibishiroColor;
-import com.licht_meilleur.tree_of_yorishiro.registry.ModBlocks;
 import com.licht_meilleur.tree_of_yorishiro.registry.ModItems;
-import net.minecraft.entity.ItemEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.entity.player.PlayerInventory;
-import net.minecraft.inventory.Inventory;
-import net.minecraft.inventory.SimpleInventory;
-import net.minecraft.item.ItemStack;
-import net.minecraft.network.PacketByteBuf;
-import net.minecraft.screen.ScreenHandler;
-import net.minecraft.screen.ScreenHandlerContext;
-import net.minecraft.screen.slot.Slot;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.Container;
+import net.minecraft.world.SimpleContainer;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.ContainerLevelAccess;
+import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
 
-public class TreeOfYorishiroScreenHandler extends ScreenHandler {
+public class TreeOfYorishiroScreenHandler extends AbstractContainerMenu {
 
     public enum DetailPage {
         MAIN,
@@ -50,123 +47,116 @@ public class TreeOfYorishiroScreenHandler extends ScreenHandler {
     public static final int BUTTON_CLAIM_ADVENTURE = 31;
 
     private final BlockPos blockPos;
-    private final ScreenHandlerContext context;
+    private final ContainerLevelAccess context;
     private DetailPage currentPage = DetailPage.MAIN;
-    private final World playerWorld;
+    private final Level playerLevel;
 
-
-
-    public TreeOfYorishiroScreenHandler(int syncId, PlayerInventory inventory, BlockPos blockPos) {
+    public TreeOfYorishiroScreenHandler(int syncId, Inventory inventory, BlockPos blockPos) {
         super(ModScreenHandlers.TREE_OF_YORISHIRO, syncId);
+
         this.blockPos = blockPos;
-        this.context = ScreenHandlerContext.create(inventory.player.getWorld(), blockPos);
-        this.playerWorld = inventory.player.getWorld();
+        this.context = ContainerLevelAccess.create(inventory.player.level(), blockPos);
+        this.playerLevel = inventory.player.level();
 
-        TreeOfYorishiroBlockEntity be = getBlockEntity(inventory.player.getWorld());
-        Inventory inv = be != null ? be.getTrainingInventory() : new SimpleInventory(4);
+        TreeOfYorishiroBlockEntity be = getBlockEntity(inventory.player.level());
+        Container inv = be != null ? be.getTrainingInventory() : new SimpleContainer(4);
+        Container adventureInv = be != null ? be.getAdventureInventory() : new SimpleContainer(9);
 
-        Inventory adventureInv = be != null ? be.getAdventureInventory() : new SimpleInventory(9);
-
-        // slot0 = 食事
         this.addSlot(new Slot(inv, 0, 110, 70) {
             @Override
-            public boolean canInsert(ItemStack stack) {
+            public boolean mayPlace(ItemStack stack) {
                 if (TreeOfYorishiroScreenHandler.this.isAdventureLocked()) {
                     return false;
                 }
 
                 return TreeOfYorishiroScreenHandler.this.currentPage == DetailPage.MEAL
-                        && stack.isFood();
+                        && stack.get(DataComponents.FOOD) != null;
             }
 
             @Override
-            public boolean isEnabled() {
+            public boolean isActive() {
                 return TreeOfYorishiroScreenHandler.this.currentPage == DetailPage.MEAL;
             }
         });
 
-        // slot1 = Lv1
         this.addSlot(new Slot(inv, 1, 96, 66) {
             @Override
-            public boolean canInsert(ItemStack stack) {
+            public boolean mayPlace(ItemStack stack) {
                 if (TreeOfYorishiroScreenHandler.this.isAdventureLocked()) {
                     return false;
                 }
 
                 return switch (TreeOfYorishiroScreenHandler.this.currentPage) {
-                    case STUDY -> stack.isOf(ModItems.STUDY_BOOK);
-                    case EXERCISE -> stack.isOf(ModItems.HEADBAND);
-                    case PLAY -> stack.isOf(ModItems.BALL);
+                    case STUDY -> stack.is(ModItems.STUDY_BOOK);
+                    case EXERCISE -> stack.is(ModItems.HEADBAND);
+                    case PLAY -> stack.is(ModItems.BALL);
                     default -> false;
                 };
             }
 
             @Override
-            public boolean isEnabled() {
+            public boolean isActive() {
                 return TreeOfYorishiroScreenHandler.this.currentPage == DetailPage.STUDY
                         || TreeOfYorishiroScreenHandler.this.currentPage == DetailPage.EXERCISE
                         || TreeOfYorishiroScreenHandler.this.currentPage == DetailPage.PLAY;
             }
         });
 
-        // slot2 = Lv2
         this.addSlot(new Slot(inv, 2, 96, 96) {
             @Override
-            public boolean canInsert(ItemStack stack) {
+            public boolean mayPlace(ItemStack stack) {
                 if (TreeOfYorishiroScreenHandler.this.isAdventureLocked()) {
                     return false;
                 }
 
                 return switch (TreeOfYorishiroScreenHandler.this.currentPage) {
-                    case STUDY -> stack.isOf(ModItems.STUDY_SET);
-                    case EXERCISE -> stack.isOf(ModItems.PUNCHING_SET);
-                    case PLAY -> stack.isOf(ModItems.BUBBLE_SET);
+                    case STUDY -> stack.is(ModItems.STUDY_SET);
+                    case EXERCISE -> stack.is(ModItems.PUNCHING_SET);
+                    case PLAY -> stack.is(ModItems.BUBBLE_SET);
                     default -> false;
                 };
             }
 
             @Override
-            public boolean isEnabled() {
+            public boolean isActive() {
                 return TreeOfYorishiroScreenHandler.this.currentPage == DetailPage.STUDY
                         || TreeOfYorishiroScreenHandler.this.currentPage == DetailPage.EXERCISE
                         || TreeOfYorishiroScreenHandler.this.currentPage == DetailPage.PLAY;
             }
         });
 
-        // slot3 = Lv3
         this.addSlot(new Slot(inv, 3, 96, 126) {
             @Override
-            public boolean canInsert(ItemStack stack) {
+            public boolean mayPlace(ItemStack stack) {
                 if (TreeOfYorishiroScreenHandler.this.isAdventureLocked()) {
                     return false;
                 }
 
                 return switch (TreeOfYorishiroScreenHandler.this.currentPage) {
-                    case STUDY -> stack.isOf(ModItems.HARD_STUDY_SET);
-                    case EXERCISE -> stack.isOf(ModItems.RUNNING_SET);
-                    case PLAY -> stack.isOf(ModItems.GAME);
+                    case STUDY -> stack.is(ModItems.HARD_STUDY_SET);
+                    case EXERCISE -> stack.is(ModItems.RUNNING_SET);
+                    case PLAY -> stack.is(ModItems.GAME);
                     default -> false;
                 };
             }
 
             @Override
-            public boolean isEnabled() {
+            public boolean isActive() {
                 return TreeOfYorishiroScreenHandler.this.currentPage == DetailPage.STUDY
                         || TreeOfYorishiroScreenHandler.this.currentPage == DetailPage.EXERCISE
                         || TreeOfYorishiroScreenHandler.this.currentPage == DetailPage.PLAY;
             }
         });
 
-        // 冒険成果物スロット 9個
         for (int i = 0; i < 9; i++) {
             this.addSlot(new Slot(adventureInv, i, 26 + i * 18, 168) {
                 @Override
-                public boolean canInsert(ItemStack stack) {
+                public boolean mayPlace(ItemStack stack) {
                     return false;
                 }
 
                 @Override
-                public boolean isEnabled() {
+                public boolean isActive() {
                     return TreeOfYorishiroScreenHandler.this.currentPage == DetailPage.ADVENTURE;
                 }
             });
@@ -179,7 +169,7 @@ public class TreeOfYorishiroScreenHandler extends ScreenHandler {
             for (int col = 0; col < 9; ++col) {
                 this.addSlot(new Slot(inventory, col + row * 9 + 9, startX + col * 18, startY + row * 18) {
                     @Override
-                    public boolean isEnabled() {
+                    public boolean isActive() {
                         return isTrainingPage(TreeOfYorishiroScreenHandler.this.currentPage);
                     }
                 });
@@ -189,28 +179,24 @@ public class TreeOfYorishiroScreenHandler extends ScreenHandler {
         for (int col = 0; col < 9; ++col) {
             this.addSlot(new Slot(inventory, col, startX + col * 18, startY + 58) {
                 @Override
-                public boolean isEnabled() {
+                public boolean isActive() {
                     return isTrainingPage(TreeOfYorishiroScreenHandler.this.currentPage);
                 }
             });
         }
     }
 
-    public TreeOfYorishiroScreenHandler(int syncId, PlayerInventory inventory, PacketByteBuf buf) {
-        this(syncId, inventory, buf.readBlockPos());
-    }
-
     public int getSyncIdForClient() {
-        return this.syncId;
+        return this.containerId;
     }
 
     public BlockPos getBlockPos() {
         return blockPos;
     }
 
-    public TreeOfYorishiroBlockEntity getBlockEntity(World world) {
-        if (world == null) return null;
-        if (!(world.getBlockEntity(blockPos) instanceof TreeOfYorishiroBlockEntity be)) return null;
+    public TreeOfYorishiroBlockEntity getBlockEntity(Level level) {
+        if (level == null) return null;
+        if (!(level.getBlockEntity(blockPos) instanceof TreeOfYorishiroBlockEntity be)) return null;
         return be;
     }
 
@@ -223,9 +209,9 @@ public class TreeOfYorishiroScreenHandler extends ScreenHandler {
     }
 
     @Override
-    public boolean onButtonClick(PlayerEntity player, int id) {
+    public boolean clickMenuButton(Player player, int id) {
         if (id >= BUTTON_SELECT_WHITE && id <= BUTTON_SELECT_PURPLE) {
-            TreeOfYorishiroBlockEntity be = getBlockEntity(player.getWorld());
+            TreeOfYorishiroBlockEntity be = getBlockEntity(player.level());
             if (be != null) {
                 ChibishiroColor color = switch (id) {
                     case BUTTON_SELECT_RED -> ChibishiroColor.RED;
@@ -237,6 +223,7 @@ public class TreeOfYorishiroScreenHandler extends ScreenHandler {
                 };
 
                 be.setSelectedColor(color);
+                be.setChanged();
             }
             return true;
         }
@@ -256,33 +243,33 @@ public class TreeOfYorishiroScreenHandler extends ScreenHandler {
                 return false;
             }
 
-            TreeOfYorishiroBlockEntity be = getBlockEntity(player.getWorld());
+            TreeOfYorishiroBlockEntity be = getBlockEntity(player.level());
             if (be != null) {
                 if (be.isAnyChibiAdventuring()) {
                     return false;
                 }
 
                 be.startTrainingFromScreen(this.currentPage.name(), selectedSlot, consumed);
-                be.markDirty();
-
+                be.setChanged();
             }
 
             return true;
         }
+
         if (id == BUTTON_START_ADVENTURE) {
-            TreeOfYorishiroBlockEntity be = getBlockEntity(player.getWorld());
+            TreeOfYorishiroBlockEntity be = getBlockEntity(player.level());
             if (be != null) {
-
                 be.startAdventureFromScreen();
-                be.markDirty();
+                be.setChanged();
             }
             return true;
         }
+
         if (id == BUTTON_CLAIM_ADVENTURE) {
-            TreeOfYorishiroBlockEntity be = getBlockEntity(player.getWorld());
-            if (be != null && player instanceof ServerPlayerEntity serverPlayer) {
+            TreeOfYorishiroBlockEntity be = getBlockEntity(player.level());
+            if (be != null && player instanceof ServerPlayer serverPlayer) {
                 be.claimAdventureRewards(serverPlayer);
-                be.markDirty();
+                be.setChanged();
             }
             return true;
         }
@@ -310,9 +297,9 @@ public class TreeOfYorishiroScreenHandler extends ScreenHandler {
     }
 
     @Override
-    public boolean canUse(PlayerEntity player) {
-        if (player.getWorld().getBlockEntity(this.blockPos) instanceof TreeOfYorishiroBlockEntity) {
-            return player.squaredDistanceTo(
+    public boolean stillValid(Player player) {
+        if (player.level().getBlockEntity(this.blockPos) instanceof TreeOfYorishiroBlockEntity) {
+            return player.distanceToSqr(
                     this.blockPos.getX() + 0.5,
                     this.blockPos.getY() + 0.5,
                     this.blockPos.getZ() + 0.5
@@ -322,15 +309,15 @@ public class TreeOfYorishiroScreenHandler extends ScreenHandler {
     }
 
     @Override
-    public ItemStack quickMove(PlayerEntity player, int slotIndex) {
+    public ItemStack quickMoveStack(Player player, int slotIndex) {
         ItemStack newStack = ItemStack.EMPTY;
         Slot slot = this.slots.get(slotIndex);
 
-        if (slot == null || !slot.hasStack()) {
+        if (slot == null || !slot.hasItem()) {
             return ItemStack.EMPTY;
         }
 
-        ItemStack originalStack = slot.getStack();
+        ItemStack originalStack = slot.getItem();
         newStack = originalStack.copy();
 
         int containerSlots = 4;
@@ -338,7 +325,7 @@ public class TreeOfYorishiroScreenHandler extends ScreenHandler {
         int playerInvEnd = this.slots.size();
 
         if (slotIndex < containerSlots) {
-            if (!this.insertItem(originalStack, playerInvStart, playerInvEnd, true)) {
+            if (!this.moveItemStackTo(originalStack, playerInvStart, playerInvEnd, true)) {
                 return ItemStack.EMPTY;
             }
         } else {
@@ -346,8 +333,8 @@ public class TreeOfYorishiroScreenHandler extends ScreenHandler {
 
             for (int i = 0; i < containerSlots; i++) {
                 Slot target = this.slots.get(i);
-                if (target.canInsert(originalStack) && !target.hasStack()) {
-                    if (this.insertItem(originalStack, i, i + 1, false)) {
+                if (target.mayPlace(originalStack) && !target.hasItem()) {
+                    if (this.moveItemStackTo(originalStack, i, i + 1, false)) {
                         moved = true;
                         break;
                     }
@@ -360,47 +347,49 @@ public class TreeOfYorishiroScreenHandler extends ScreenHandler {
         }
 
         if (originalStack.isEmpty()) {
-            slot.setStack(ItemStack.EMPTY);
+            slot.set(ItemStack.EMPTY);
         } else {
-            slot.markDirty();
+            slot.setChanged();
         }
 
         return newStack;
     }
 
-    private void dropTrainingItemsAtTree(PlayerEntity player) {
-        if (player.getWorld().isClient()) return;
+    private void dropTrainingItemsAtTree(Player player) {
+        if (player.level().isClientSide()) return;
 
-        World world = player.getWorld();
+        Level level = player.level();
 
         for (int i = 0; i < 4; i++) {
             Slot slot = this.slots.get(i);
-            if (!slot.hasStack()) continue;
+            if (!slot.hasItem()) continue;
 
-            ItemStack stack = slot.getStack().copy();
-            slot.setStack(ItemStack.EMPTY);
+            ItemStack stack = slot.getItem().copy();
+            slot.set(ItemStack.EMPTY);
 
             ItemEntity itemEntity = new ItemEntity(
-                    world,
+                    level,
                     this.blockPos.getX() + 0.5,
                     this.blockPos.getY() + 1.0,
                     this.blockPos.getZ() + 0.5,
                     stack
             );
-            world.spawnEntity(itemEntity);
+            level.addFreshEntity(itemEntity);
         }
     }
-    @Override
-    public void onClosed(PlayerEntity player) {
-        super.onClosed(player);
 
-        if (!player.getWorld().isClient()) {
+    @Override
+    public void removed(Player player) {
+        super.removed(player);
+
+        if (!player.level().isClientSide()) {
             dropTrainingItemsAtTree(player);
         }
     }
+
     public int getSelectedTrainingSlot() {
         if (currentPage == DetailPage.MEAL) {
-            return this.getSlot(0).hasStack() ? 0 : -1;
+            return this.getSlot(0).hasItem() ? 0 : -1;
         }
 
         if (currentPage == DetailPage.STUDY
@@ -410,15 +399,15 @@ public class TreeOfYorishiroScreenHandler extends ScreenHandler {
             int found = -1;
 
             for (int i = 1; i <= 3; i++) {
-                if (this.getSlot(i).hasStack()) {
+                if (this.getSlot(i).hasItem()) {
                     if (found != -1) {
-                        return -2; // 複数入っているので無効
+                        return -2;
                     }
                     found = i;
                 }
             }
 
-            return found; // 1～3 or -1
+            return found;
         }
 
         return -1;
@@ -441,29 +430,27 @@ public class TreeOfYorishiroScreenHandler extends ScreenHandler {
         }
 
         Slot slot = this.getSlot(slotIndex);
-        if (!slot.hasStack()) {
+        if (!slot.hasItem()) {
             return ItemStack.EMPTY;
         }
 
-        ItemStack stack = slot.getStack();
+        ItemStack stack = slot.getItem();
         ItemStack consumed = stack.copy();
         consumed.setCount(1);
 
-        stack.decrement(1);
+        stack.shrink(1);
 
         if (stack.isEmpty()) {
-            slot.setStack(ItemStack.EMPTY);
+            slot.set(ItemStack.EMPTY);
         } else {
-            slot.markDirty();
+            slot.setChanged();
         }
 
         return consumed;
     }
 
     private boolean isAdventureLocked() {
-        TreeOfYorishiroBlockEntity be = getBlockEntity(playerWorld);
+        TreeOfYorishiroBlockEntity be = getBlockEntity(playerLevel);
         return be != null && be.isAnyChibiAdventuring();
     }
-
-
 }

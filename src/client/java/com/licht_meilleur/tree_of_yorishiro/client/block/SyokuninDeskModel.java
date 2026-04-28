@@ -1,23 +1,25 @@
 package com.licht_meilleur.tree_of_yorishiro.client.block;
 
+import com.geckolib.model.GeoModel;
+import com.geckolib.renderer.base.GeoRenderState;
 import com.licht_meilleur.tree_of_yorishiro.TreeofYorishiroMod;
 import com.licht_meilleur.tree_of_yorishiro.block.entity.SyokuninDeskBlockEntity;
-import net.minecraft.util.Identifier;
-import software.bernie.geckolib.model.GeoModel;
+import net.minecraft.resources.Identifier;
 
 public class SyokuninDeskModel extends GeoModel<SyokuninDeskBlockEntity> {
+
     @Override
-    public Identifier getModelResource(SyokuninDeskBlockEntity animatable) {
-        return TreeofYorishiroMod.id("geo/syokunin_desk.geo.json");
+    public Identifier getModelResource(GeoRenderState state) {
+        return TreeofYorishiroMod.id("syokunin_desk");
     }
 
     @Override
-    public Identifier getTextureResource(SyokuninDeskBlockEntity animatable) {
+    public Identifier getTextureResource(GeoRenderState state) {
         return TreeofYorishiroMod.id("textures/block/syokunin_desk.png");
     }
 
     @Override
     public Identifier getAnimationResource(SyokuninDeskBlockEntity animatable) {
-        return TreeofYorishiroMod.id("animations/syokunin_desk.animation.json");
+        return TreeofYorishiroMod.id("syokunin_desk");
     }
 }

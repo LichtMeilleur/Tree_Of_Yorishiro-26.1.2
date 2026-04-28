@@ -1,10 +1,37 @@
 {
   "variants": {
-    "watered=false": {
-      "model": "tree_of_yorishiro:block/bud_of_yorishiro"
+    "facing=north,watered=false": {
+      "model": "tree_of_yorishiro:block/bud_of_yorishiro",
+      "y": 0
     },
-    "watered=true": {
-      "model": "tree_of_yorishiro:block/bud_of_yorishiro"
+    "facing=east,watered=false": {
+      "model": "tree_of_yorishiro:block/bud_of_yorishiro",
+      "y": 90
+    },
+    "facing=south,watered=false": {
+      "model": "tree_of_yorishiro:block/bud_of_yorishiro",
+      "y": 180
+    },
+    "facing=west,watered=false": {
+      "model": "tree_of_yorishiro:block/bud_of_yorishiro",
+      "y": 270
+    },
+
+    "facing=north,watered=true": {
+      "model": "tree_of_yorishiro:block/bud_of_yorishiro",
+      "y": 0
+    },
+    "facing=east,watered=true": {
+      "model": "tree_of_yorishiro:block/bud_of_yorishiro",
+      "y": 90
+    },
+    "facing=south,watered=true": {
+      "model": "tree_of_yorishiro:block/bud_of_yorishiro",
+      "y": 180
+    },
+    "facing=west,watered=true": {
+      "model": "tree_of_yorishiro:block/bud_of_yorishiro",
+      "y": 270
     }
   }
 }

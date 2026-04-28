@@ -1,57 +1,57 @@
 package com.licht_meilleur.tree_of_yorishiro.world.feature;
 
-import com.mojang.serialization.Codec;
 import com.licht_meilleur.tree_of_yorishiro.registry.ModBlocks;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.registry.tag.BlockTags;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.Heightmap;
-import net.minecraft.world.StructureWorldAccess;
-import net.minecraft.world.gen.feature.DefaultFeatureConfig;
-import net.minecraft.world.gen.feature.Feature;
-import net.minecraft.world.gen.feature.util.FeatureContext;
+import com.mojang.serialization.Codec;
+import net.minecraft.core.BlockPos;
+import net.minecraft.tags.BlockTags;
+import net.minecraft.world.level.WorldGenLevel;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.levelgen.Heightmap;
+import net.minecraft.world.level.levelgen.feature.Feature;
+import net.minecraft.world.level.levelgen.feature.FeaturePlaceContext;
+import net.minecraft.world.level.levelgen.feature.configurations.NoneFeatureConfiguration;
 
-public class YorishiroStoneFeature extends Feature<DefaultFeatureConfig> {
+public class YorishiroStoneFeature extends Feature<NoneFeatureConfiguration> {
 
-    public YorishiroStoneFeature(Codec<DefaultFeatureConfig> codec) {
+    public YorishiroStoneFeature(Codec<NoneFeatureConfiguration> codec) {
         super(codec);
     }
 
     @Override
-    public boolean generate(FeatureContext<DefaultFeatureConfig> context) {
-        StructureWorldAccess world = context.getWorld();
-        BlockPos origin = context.getOrigin();
+    public boolean place(FeaturePlaceContext<NoneFeatureConfiguration> context) {
+        WorldGenLevel level = context.level();
+        BlockPos origin = context.origin();
 
         int x = origin.getX();
         int z = origin.getZ();
 
-        int y = world.getTopY(Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, x, z);
+        int y = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);
         BlockPos placePos = new BlockPos(x, y, z);
-        BlockPos belowPos = placePos.down();
+        BlockPos belowPos = placePos.below();
 
-        BlockState below = world.getBlockState(belowPos);
-        BlockState current = world.getBlockState(placePos);
+        BlockState below = level.getBlockState(belowPos);
+        BlockState current = level.getBlockState(placePos);
 
         if (!current.isAir()) {
             return false;
         }
 
-        if (!world.getFluidState(placePos).isEmpty()) {
+        if (!level.getFluidState(placePos).isEmpty()) {
             return false;
         }
 
-        if (!(below.isOf(Blocks.GRASS_BLOCK)
-                || below.isOf(Blocks.DIRT)
-                || below.isOf(Blocks.COARSE_DIRT)
-                || below.isOf(Blocks.PODZOL)
-                || below.isOf(Blocks.STONE)
-                || below.isIn(BlockTags.DIRT))) {
+        if (!(below.is(Blocks.GRASS_BLOCK)
+                || below.is(Blocks.DIRT)
+                || below.is(Blocks.COARSE_DIRT)
+                || below.is(Blocks.PODZOL)
+                || below.is(Blocks.STONE)
+                || below.is(BlockTags.DIRT))) {
             return false;
         }
 
-        world.setBlockState(placePos, ModBlocks.YORISHIRO_STONE.getDefaultState(), Block.NOTIFY_ALL);
+        level.setBlock(placePos, ModBlocks.YORISHIRO_STONE.defaultBlockState(), Block.UPDATE_ALL);
         return true;
     }
 }

@@ -1,76 +1,34 @@
 package com.licht_meilleur.tree_of_yorishiro.client.entity;
 
-import com.licht_meilleur.tree_of_yorishiro.entity.ChibishiroEntity;
+import com.geckolib.renderer.GeoEntityRenderer;
+import com.geckolib.renderer.base.GeoRenderState;
 import com.licht_meilleur.tree_of_yorishiro.entity.YorisyokuninEntity;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.render.RenderLayer;
-import net.minecraft.client.render.VertexConsumer;
-import net.minecraft.client.render.VertexConsumerProvider;
-import net.minecraft.client.render.entity.EntityRendererFactory;
-import net.minecraft.client.render.model.json.ModelTransformationMode;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.item.ItemStack;
-import software.bernie.geckolib.cache.object.GeoBone;
-import software.bernie.geckolib.renderer.GeoEntityRenderer;
-import software.bernie.geckolib.util.RenderUtils;
+import net.minecraft.client.renderer.entity.EntityRendererProvider;
+import net.minecraft.client.renderer.entity.state.LivingEntityRenderState;
+import org.jspecify.annotations.Nullable;
 
-public class YorisyokuninRenderer extends GeoEntityRenderer<YorisyokuninEntity> {
+public class YorisyokuninRenderer<R extends LivingEntityRenderState & GeoRenderState>
+        extends GeoEntityRenderer<YorisyokuninEntity, R> {
 
-    public YorisyokuninRenderer(EntityRendererFactory.Context ctx) {
+    public YorisyokuninRenderer(EntityRendererProvider.Context ctx) {
         super(ctx, new YorisyokuninModel());
-        this.shadowRadius = 0.35f;
+        this.shadowRadius = 0.35F;
+
+        this.withRenderLayer(renderer -> new YorisyokuninWorkItemLayer<>(renderer, ctx.getItemModelResolver()));
     }
 
     @Override
-    public void renderRecursively(
-            MatrixStack poseStack,
+    public void addRenderData(
             YorisyokuninEntity animatable,
-            GeoBone bone,
-            RenderLayer renderType,
-            VertexConsumerProvider bufferSource,
-            VertexConsumer buffer,
-            boolean isReRender,
-            float partialTick,
-            int packedLight,
-            int packedOverlay,
-            float red, float green, float blue, float alpha
+            @Nullable Void relatedObject,
+            R renderState,
+            float partialTick
     ) {
-        super.renderRecursively(
-                poseStack, animatable, bone, renderType, bufferSource, buffer,
-                isReRender, partialTick, packedLight, packedOverlay,
-                red, green, blue, alpha
+        super.addRenderData(animatable, relatedObject, renderState, partialTick);
+
+        renderState.addGeckolibData(
+                YorisyokuninRenderTickets.HELD_WORK_ITEM,
+                animatable.getHeldWorkItem().copy()
         );
-
-        if (!"take_item_locator".equals(bone.getName())) {
-            return;
-        }
-
-        ItemStack stack = animatable.getHeldWorkItem();
-        if (stack.isEmpty()) {
-            return;
-        }
-
-        poseStack.push();
-
-        RenderUtils.translateMatrixToBone(poseStack, bone);
-        RenderUtils.translateToPivotPoint(poseStack, bone);
-        RenderUtils.translateAwayFromPivotPoint(poseStack, bone);
-
-        // ここはあとで微調整
-        poseStack.translate(0.0F, 0.0F, 0.0F);
-        poseStack.scale(0.8F, 0.8F, 0.8F);
-
-        MinecraftClient.getInstance().getItemRenderer().renderItem(
-                stack,
-                ModelTransformationMode.FIXED,
-                packedLight,
-                packedOverlay,
-                poseStack,
-                bufferSource,
-                animatable.getWorld(),
-                0
-        );
-
-        poseStack.pop();
     }
 }

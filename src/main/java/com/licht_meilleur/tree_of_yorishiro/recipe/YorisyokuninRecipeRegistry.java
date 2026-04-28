@@ -1,9 +1,9 @@
 package com.licht_meilleur.tree_of_yorishiro.recipe;
 
 import com.licht_meilleur.tree_of_yorishiro.registry.ModItems;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.registry.tag.ItemTags;
+import net.minecraft.tags.ItemTags;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,23 +14,17 @@ public class YorisyokuninRecipeRegistry {
 
     static {
         RECIPES.add(new YorisyokuninRecipeDef(
-                List.of(
-                        YorisyokuninRequirement.ofItem(Items.BOOK)
-                ),
+                List.of(YorisyokuninRequirement.ofItem(Items.BOOK)),
                 new ItemStack(ModItems.STUDY_BOOK)
         ));
 
         RECIPES.add(new YorisyokuninRecipeDef(
-                List.of(
-                        YorisyokuninRequirement.ofTag(ItemTags.WOOL)
-                ),
+                List.of(YorisyokuninRequirement.ofTag(ItemTags.WOOL)),
                 new ItemStack(ModItems.HEADBAND)
         ));
 
         RECIPES.add(new YorisyokuninRecipeDef(
-                List.of(
-                        YorisyokuninRequirement.ofItem(Items.SLIME_BALL)
-                ),
+                List.of(YorisyokuninRequirement.ofItem(Items.SLIME_BALL)),
                 new ItemStack(ModItems.BALL)
         ));
 
@@ -78,9 +72,7 @@ public class YorisyokuninRecipeRegistry {
         ));
 
         RECIPES.add(new YorisyokuninRecipeDef(
-                List.of(
-                        YorisyokuninRequirement.ofTag(ItemTags.LOGS_THAT_BURN)
-                ),
+                List.of(YorisyokuninRequirement.ofTag(ItemTags.LOGS_THAT_BURN)),
                 new ItemStack(ModItems.STUDY_DESK)
         ));
     }

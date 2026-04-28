@@ -72,7 +72,7 @@ jar {
 publishing {
 	publications {
 		create("mavenJava", MavenPublication) {
-			artifactId = "blue_student"
+			artifactId = "tree_of_yorishiro"
 			from components.java
 		}
 	}

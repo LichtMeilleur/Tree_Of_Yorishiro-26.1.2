@@ -1,39 +1,34 @@
 package com.licht_meilleur.tree_of_yorishiro.block;
 
 import com.licht_meilleur.tree_of_yorishiro.block.entity.TreeOfYorishiroBlockEntity;
-import net.minecraft.block.BlockState;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 
 public class DebugTreeOfYorishiroBlock extends TreeOfYorishiroBlock {
 
-    public DebugTreeOfYorishiroBlock(Settings settings) {
-        super(settings);
+    public DebugTreeOfYorishiroBlock(Properties properties) {
+        super(properties);
     }
 
     @Override
-    public void onPlaced(World world, BlockPos pos, BlockState state,
-                         @Nullable LivingEntity placer, ItemStack itemStack) {
+    public void setPlacedBy(Level level, BlockPos pos, BlockState state,
+                            @Nullable LivingEntity placer, ItemStack stack) {
+        super.setPlacedBy(level, pos, state, placer, stack);
 
-        super.onPlaced(world, pos, state, placer, itemStack);
+        if (!(level instanceof ServerLevel serverLevel)) return;
+        if (!(serverLevel.getBlockEntity(pos) instanceof TreeOfYorishiroBlockEntity be)) return;
 
-        if (!(world instanceof ServerWorld sw)) return;
-        if (!(sw.getBlockEntity(pos) instanceof TreeOfYorishiroBlockEntity be)) return;
-
-        // ★ デフォルトちび生成
         be.initDefaultChibisIfNeeded();
+        // TODO: TreeOfYorishiroBlockEntity復元後に戻す
+        // be.debugSetAllChibisHighStats();
+        // be.ensureChibishiros();
 
-        // ★ 高ステ化
-        be.debugSetAllChibisHighStats();
-
-        // ★ 即召喚（これが重要）
-        be.ensureChibishiros();
-
-        be.markDirty();
-        world.updateListeners(pos, state, state, 3);
+        be.setChanged();
+        level.sendBlockUpdated(pos, state, state, 3);
     }
 }

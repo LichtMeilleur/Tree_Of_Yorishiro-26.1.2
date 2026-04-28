@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    { "item": "tree_of_yorishiro:study_book" },
+    { "item": "tree_of_yorishiro:study_desk" },
+    { "item": "tree_of_yorishiro:glasses_and_pen" }
+  ],
+  "result": {
+    "item": "tree_of_yorishiro:hard_study_set",
+    "count": 1
+  }
+}

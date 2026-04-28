@@ -1,0 +1,9 @@
+{
+  "replace": false,
+  "values": [
+    "minecraft:emerald",
+    "minecraft:diamond",
+    "minecraft:amethyst_shard",
+    "minecraft:gold_ingot"
+  ]
+}

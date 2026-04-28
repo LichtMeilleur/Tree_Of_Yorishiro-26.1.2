@@ -1,0 +1,29 @@
+{
+  "replace": false,
+  "values": [
+    "tree_of_yorishiro:yorishiro_stone",
+
+    "minecraft:stick",
+    "minecraft:oak_log",
+    "minecraft:birch_log",
+    "minecraft:spruce_log",
+
+    "minecraft:wheat_seeds",
+    "minecraft:carrot",
+    "minecraft:potato",
+    "minecraft:apple",
+    "minecraft:sweet_berries",
+
+    "minecraft:clay_ball",
+    "minecraft:string",
+    "minecraft:bone",
+    "minecraft:feather",
+    "minecraft:leather",
+
+    "minecraft:coal",
+    "minecraft:charcoal",
+
+    "minecraft:raw_copper",
+    "minecraft:raw_iron"
+  ]
+}

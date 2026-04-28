@@ -1,0 +1,30 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "YGB",
+    "OKP",
+    "RSM"
+  ],
+  "key": {
+    "R": { "item": "minecraft:red_dye" },
+    "O": { "item": "minecraft:orange_dye" },
+    "Y": { "item": "minecraft:yellow_dye" },
+    "G": { "item": "minecraft:green_dye" },
+    "B": { "item": "minecraft:blue_dye" },
+    "P": { "item": "minecraft:purple_dye" },
+    "M": { "item": "minecraft:pink_dye" },
+    "S": [
+      { "item": "minecraft:wheat_seeds" },
+      { "item": "minecraft:beetroot_seeds" },
+      { "item": "minecraft:pumpkin_seeds" },
+      { "item": "minecraft:melon_seeds" },
+      { "item": "minecraft:torchflower_seeds" },
+      { "item": "minecraft:pitcher_pod" }
+    ],
+    "K": { "item": "tree_of_yorishiro:yorishiro_stone"}
+  },
+  "result": {
+    "item": "tree_of_yorishiro:rainbow_seed",
+    "count": 1
+  }
+}

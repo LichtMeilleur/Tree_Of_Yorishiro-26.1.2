@@ -1,0 +1,8 @@
+{
+  "variants": {
+    "facing=north": { "model": "tree_of_yorishiro:block/empty", "y": 0 },
+    "facing=east":  { "model": "tree_of_yorishiro:block/empty", "y": 90 },
+    "facing=south": { "model": "tree_of_yorishiro:block/empty", "y": 180 },
+    "facing=west":  { "model": "tree_of_yorishiro:block/empty", "y": 270 }
+  }
+}

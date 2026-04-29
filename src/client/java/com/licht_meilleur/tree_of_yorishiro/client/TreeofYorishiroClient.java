@@ -2,6 +2,7 @@ package com.licht_meilleur.tree_of_yorishiro.client;
 
 import com.licht_meilleur.tree_of_yorishiro.client.block.GrowingTreeOfYorishiroRenderer;
 import com.licht_meilleur.tree_of_yorishiro.client.block.SyokuninDeskRenderer;
+import com.licht_meilleur.tree_of_yorishiro.client.block.TreeOfYorishiroRenderer;
 import com.licht_meilleur.tree_of_yorishiro.client.entity.ChibishiroRenderer;
 import com.licht_meilleur.tree_of_yorishiro.client.entity.YorisyokuninRenderer;
 import com.licht_meilleur.tree_of_yorishiro.client.screen.TreeOfYorishiroScreen;
@@ -21,6 +22,11 @@ public class TreeofYorishiroClient implements ClientModInitializer {
         BlockEntityRenderers.register(
                 ModBlockEntities.GROWING_TREE_OF_YORISHIRO,
                 GrowingTreeOfYorishiroRenderer::new
+        );
+
+        BlockEntityRenderers.register(
+                ModBlockEntities.TREE_PART,
+                TreeOfYorishiroRenderer::new
         );
 
 

@@ -17,6 +17,8 @@ public class ModBlocks {
     public static final Block BUD_OF_YORISHIRO = registerBlockWithoutItem("bud_of_yorishiro",
             new BudOfYorishiroBlock());
 
+
+
     public static final Block GROWING_TREE_OF_YORISHIRO = register("growing_tree_of_yorishiro",
             new GrowingTreeOfYorishiroBlock());
 

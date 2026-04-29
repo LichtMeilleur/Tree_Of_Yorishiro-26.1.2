@@ -10,7 +10,7 @@ public class GrowingTreeOfYorishiroModel extends GeoModel<GrowingTreeOfYorishiro
 
     @Override
     public Identifier getModelResource(GeoRenderState state) {
-        return TreeofYorishiroMod.id("growing_tree_of_yorishiro");
+        return TreeofYorishiroMod.id("tree_of_yorishiro");
     }
 
     @Override
@@ -20,6 +20,6 @@ public class GrowingTreeOfYorishiroModel extends GeoModel<GrowingTreeOfYorishiro
 
     @Override
     public Identifier getAnimationResource(GrowingTreeOfYorishiroBlockEntity animatable) {
-        return TreeofYorishiroMod.id("growing_tree_of_yorishiro");
+        return TreeofYorishiroMod.id("tree_of_yorishiro");
     }
 }

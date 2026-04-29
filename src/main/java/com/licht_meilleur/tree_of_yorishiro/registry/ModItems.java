@@ -1,6 +1,7 @@
 package com.licht_meilleur.tree_of_yorishiro.registry;
 
 import com.licht_meilleur.tree_of_yorishiro.TreeofYorishiroMod;
+import com.licht_meilleur.tree_of_yorishiro.item.TreeOfYorishiroItem;
 import com.licht_meilleur.tree_of_yorishiro.item.YorisyokuninSummonItem;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -41,7 +42,7 @@ public class ModItems {
             new YorisyokuninSummonItem(props("yorisyokunin_item").stacksTo(16)));
 
     public static final Item TREE_OF_YORISHIRO_ITEM = register("tree_of_yorishiro_item",
-            new BlockItem(ModBlocks.TREE_OF_YORISHIRO_UNDER, props("tree_of_yorishiro_item").stacksTo(1)));
+            new TreeOfYorishiroItem(props("tree_of_yorishiro_item").stacksTo(1)));
 
 
     public static final Item DEBUG_TREE_OF_YORISHIRO_ITEM = register("debug_tree_of_yorishiro_item",

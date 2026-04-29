@@ -4,6 +4,7 @@ import com.licht_meilleur.tree_of_yorishiro.TreeofYorishiroMod;
 import com.licht_meilleur.tree_of_yorishiro.block.entity.GrowingTreeOfYorishiroBlockEntity;
 import com.licht_meilleur.tree_of_yorishiro.block.entity.SyokuninDeskBlockEntity;
 import com.licht_meilleur.tree_of_yorishiro.block.entity.TreeOfYorishiroBlockEntity;
+import com.licht_meilleur.tree_of_yorishiro.block.entity.TreeOfYorishiroPartBlockEntity;
 import net.fabricmc.fabric.api.object.builder.v1.block.entity.FabricBlockEntityTypeBuilder;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -17,7 +18,7 @@ public class ModBlockEntities {
                     TreeofYorishiroMod.id("tree_of_yorishiro"),
                     FabricBlockEntityTypeBuilder.create(
                             TreeOfYorishiroBlockEntity::new,
-                            ModBlocks.TREE_OF_YORISHIRO_UNDER
+                            ModBlocks.TREE_OF_YORISHIRO_UNDER // ←ここ重要
                     ).build()
             );
 
@@ -31,6 +32,18 @@ public class ModBlockEntities {
                     ).build()
             );
 
+    public static final BlockEntityType<TreeOfYorishiroPartBlockEntity> TREE_PART =
+            Registry.register(
+                    BuiltInRegistries.BLOCK_ENTITY_TYPE,
+                    TreeofYorishiroMod.id("tree_part"),
+                    FabricBlockEntityTypeBuilder.create(
+                            TreeOfYorishiroPartBlockEntity::new,
+                            ModBlocks.TREE_OF_YORISHIRO_UNDER,
+                            ModBlocks.TREE_OF_YORISHIRO_MIDDLE,
+                            ModBlocks.TREE_OF_YORISHIRO_TOP
+                    ).build()
+            );
+
     public static final BlockEntityType<SyokuninDeskBlockEntity> SYOKUNIN_DESK =
             Registry.register(
                     BuiltInRegistries.BLOCK_ENTITY_TYPE,
@@ -40,6 +53,8 @@ public class ModBlockEntities {
                             ModBlocks.SYOKUNIN_DESK
                     ).build()
             );
+
+
 
     public static void register() {
         TreeofYorishiroMod.LOGGER.info("[TreeOfYorishiro] Registering block entities");

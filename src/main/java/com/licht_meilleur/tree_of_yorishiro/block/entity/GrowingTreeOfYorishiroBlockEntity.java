@@ -7,9 +7,12 @@ import com.geckolib.animation.AnimationController;
 import com.geckolib.animation.RawAnimation;
 import com.geckolib.animation.object.PlayState;
 import com.geckolib.util.GeckoLibUtil;
+import com.licht_meilleur.tree_of_yorishiro.block.GrowingTreeOfYorishiroBlock;
+import com.licht_meilleur.tree_of_yorishiro.block.TreeOfYorishiroPartBlock;
 import com.licht_meilleur.tree_of_yorishiro.registry.ModBlockEntities;
 import com.licht_meilleur.tree_of_yorishiro.registry.ModBlocks;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -36,17 +39,32 @@ public class GrowingTreeOfYorishiroBlockEntity extends BlockEntity implements Ge
         be.growTicks--;
 
         if (be.growTicks <= 0) {
-            replaceWithCompletedTree(level, pos);
+            replaceWithCompletedTree(level, pos, state);
         }
     }
 
-    private static void replaceWithCompletedTree(Level level, BlockPos pos) {
+    private static void replaceWithCompletedTree(Level level, BlockPos pos, BlockState growingState) {
         if (!level.getBlockState(pos.above()).canBeReplaced()) return;
         if (!level.getBlockState(pos.above(2)).canBeReplaced()) return;
 
-        level.setBlock(pos, ModBlocks.TREE_OF_YORISHIRO_UNDER.defaultBlockState(), Block.UPDATE_ALL);
-        level.setBlock(pos.above(), ModBlocks.TREE_OF_YORISHIRO_MIDDLE.defaultBlockState(), Block.UPDATE_ALL);
-        level.setBlock(pos.above(2), ModBlocks.TREE_OF_YORISHIRO_TOP.defaultBlockState(), Block.UPDATE_ALL);
+        Direction facing = growingState.getValue(GrowingTreeOfYorishiroBlock.FACING);
+
+        level.setBlock(pos,
+                ModBlocks.TREE_OF_YORISHIRO_UNDER.defaultBlockState()
+                        .setValue(TreeOfYorishiroPartBlock.FACING, facing),
+                Block.UPDATE_ALL);
+
+        level.setBlock(pos.above(),
+                ModBlocks.TREE_OF_YORISHIRO_MIDDLE.defaultBlockState()
+                        .setValue(TreeOfYorishiroPartBlock.FACING, facing),
+                Block.UPDATE_ALL);
+
+        level.setBlock(pos.above(2),
+                ModBlocks.TREE_OF_YORISHIRO_TOP.defaultBlockState()
+                        .setValue(TreeOfYorishiroPartBlock.FACING, facing),
+                Block.UPDATE_ALL);
+
+        TreeOfYorishiroPartBlock.placeCollisionBlocks(level, pos, facing);
     }
 
     @Override

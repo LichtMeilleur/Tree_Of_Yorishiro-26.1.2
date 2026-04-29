@@ -453,4 +453,6 @@ public class TreeOfYorishiroScreenHandler extends AbstractContainerMenu {
         TreeOfYorishiroBlockEntity be = getBlockEntity(playerLevel);
         return be != null && be.isAnyChibiAdventuring();
     }
+
+
 }
